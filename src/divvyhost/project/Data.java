@@ -6,7 +6,7 @@ import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.logging.Logger;
 import divvyhost.utils.Paths;
-import divvyhost.utils.utils;
+import divvyhost.utils.Utils;
 
 /**
  *
@@ -17,14 +17,18 @@ public class Data implements Serializable{
     
     private String title, description;
     private byte[] data;
-
-    public Data() {
-    }
+    
 
     public Data(String title, String description, byte[] data) {
         this.title = title;
         this.description = description;
         this.data = data;
+    }
+
+    public Data(String title, String description) {
+        this.title = title;
+        this.description = description;
+        this.data = null;
     }
 
     public void setData(byte[] data) {
@@ -57,16 +61,36 @@ public class Data implements Serializable{
      * @param publicKey
      * @return 
      */
-    public boolean export(String projectDirectory, byte[] publicKey) {
+    public boolean exportData(String projectDirectory) {
         File dirExport = (new Paths()).getHostDir();
         File dirProject = new File(dirExport, projectDirectory);
         dirProject.mkdirs();
-        if(utils.unzip(new ByteArrayInputStream(data), dirProject))  
+        if(Utils.unzip(new ByteArrayInputStream(data), dirProject))  
             log.info(projectDirectory+" Exported");
         else {
             log.severe(projectDirectory+" Export Failed!!!");
             return false;
         }
         return true;
+    }
+    
+    public boolean importData(String projectDirectory) {
+        File dirExport = (new Paths()).getHostDir();
+        File dirProject = new File(dirExport, projectDirectory);
+        if (!(dirProject.isDirectory() && dirProject.exists()) ) {
+            log.severe("["+projectDirectory+"] Directory Not Exists");
+            return false;
+        }
+        byte[] data = Utils.zip(dirProject);
+        if(data!=null)  {
+            this.data = data;
+            log.info(projectDirectory+" Imported(Just Data)");
+            return true;
+        }
+        else {
+            log.severe(projectDirectory+" Import Failed!!!");
+        }
+        return false;
+      
     }
 }

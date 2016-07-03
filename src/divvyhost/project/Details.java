@@ -8,31 +8,27 @@ import java.util.UUID;
  * @author scopeinfinity
  */
 public class Details implements Serializable {
-    private UUID pID, uID;
+    private static final long serialVersionUID = 6008569331922371591L;
+    
+    private UUID pID;
     private long lastModified;
 
     /**
      * Fresh ProjectDetails
      */
-    public Details(UUID user) {
+    public Details() {
         lastModified = System.currentTimeMillis();
         pID = UUID.randomUUID();
-        uID = user;
     }
 
     
-    public Details(UUID user, UUID pID, long lastModified) {
+    public Details(UUID pID, long lastModified) {
         this.pID = pID;
-        this.uID = user;
         this.lastModified = lastModified;
     }
 
     public UUID getpID() {
         return pID;
-    }
-
-    public UUID getuID() {
-        return uID;
     }
 
     public long getLastModified() {

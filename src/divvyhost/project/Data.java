@@ -7,6 +7,7 @@ import java.io.Serializable;
 import java.util.logging.Logger;
 import divvyhost.utils.Paths;
 import divvyhost.utils.Utils;
+import java.util.UUID;
 
 /**
  *
@@ -14,35 +15,40 @@ import divvyhost.utils.Utils;
  */
 public class Data implements Serializable{
     private static final Logger log = Logger.getLogger(Data.class.getName());
+    private static final long serialVersionUID = 3138851497398476374L;
     
     private String title, description;
     private byte[] data;
+    private String author;
+    
+    // Project ID for Cross Verification
+    private UUID pID;
     
 
-    public Data(String title, String description, byte[] data) {
+    public Data(UUID pID, String author, String title, String description, byte[] data) {
         this.title = title;
         this.description = description;
         this.data = data;
+        this.author = author;
+        this.pID = pID;
     }
 
-    public Data(String title, String description) {
+    public Data(UUID pID, String author, String title, String description) {
         this.title = title;
         this.description = description;
         this.data = null;
+        this.author = author;
+        this.pID = pID;
     }
 
     public void setData(byte[] data) {
         this.data = data;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public UUID getpID() {
+        return pID;
     }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
+    
     public byte[] getData() {
         return data;
     }
@@ -54,6 +60,10 @@ public class Data implements Serializable{
     public String getTitle() {
         return title;
     }
+
+    public String getAuthor() {
+        return author;
+    }
     
     /**
      * Export Project Data to required Directory
@@ -64,7 +74,14 @@ public class Data implements Serializable{
     public boolean exportData(String projectDirectory) {
         File dirExport = (new Paths()).getHostDir();
         File dirProject = new File(dirExport, projectDirectory);
+        Utils.emptyDirectory(dirProject);
         dirProject.mkdirs();
+        
+        if (data == null) {
+            log.severe("No Data Avaliable to Export!");
+            return false;
+        }
+        
         if(Utils.unzip(new ByteArrayInputStream(data), dirProject))  
             log.info(projectDirectory+" Exported");
         else {

@@ -17,6 +17,7 @@ import divvyhost.utils.Utils;
 import java.io.ByteArrayOutputStream;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.UUID;
 
 /**
  *
@@ -24,7 +25,8 @@ import java.security.PublicKey;
  */
 public class Project implements Serializable{
     private static final Logger log = Logger.getLogger(Project.class.getName());
-    
+    private static final long serialVersionUID = 2599785789517212065L;
+            
     private PublicKey publicKey;
     private Details details;
     private Data data;
@@ -49,6 +51,14 @@ public class Project implements Serializable{
         this.data = data;
         this.signature = signature;
     }
+
+    @Override
+    public String toString() {
+        if (data == null)
+            return details.getpID().toString();
+        return data.getTitle();
+    }
+    
     
     public File createHostPath() {
         Paths path = new Paths();
@@ -75,12 +85,8 @@ public class Project implements Serializable{
             ObjectInputStream ois = new ObjectInputStream(fis);
             Project project = (Project) ois.readObject();
             ois.close();
-            if(project==null || !project.isValid()) {
-                log.severe("Project "+file.toString()+" Load Failed!!");
-                return null;
-            }
-            if (!project.signValidate()) {
-                log.severe("Loaded Project "+project.getDetails().getFileName()+" : Signature Verify Failed!!");
+            if (project == null || !project.completeValidation()) {
+                log.severe("Project not Loaded or Complete Validation Failed!!");
                 return null;
             }
             
@@ -94,6 +100,26 @@ public class Project implements Serializable{
             log.severe("Invalid/Outdated File");
         }
         return null;
+    }
+    
+    public boolean completeValidation() {
+        if(!isValid()) {
+            log.severe("Project Load Failed!!");
+            return false;
+        }
+        if (!signValidate()) {
+            log.severe("Loaded Project "+getDetails().getFileName()+" : Signature Verify Failed!!");
+            return false;
+        }
+        if (getDetails().getpID()==null) {
+            log.severe("Load Failed : Project "+getDetails().getFileName()+" : pID not Available");
+            return false;
+        }
+        if (!getDetails().getpID().equals(getData().getpID())) {
+            log.severe("Load Failed : Project "+getDetails().getFileName()+" : pID Forged!!");
+            return false;
+        }
+        return true;
     }
     
     /**
@@ -225,13 +251,15 @@ public class Project implements Serializable{
      * @param privateKey
      * @return isImported
      */
-    public boolean importProject(String title, String desciption, PrivateKey privateKey) {
+    public boolean importProject(String author, String title, String desciption, PrivateKey privateKey) {
+        if (author==null && this.data!=null)
+            author = this.data.getAuthor();
         if (title==null && this.data!=null)
             title = this.data.getTitle();
         if (desciption==null && this.data!=null)
             desciption = this.data.getDescription();
         
-        Data data = new Data(title, desciption, null);
+        Data data = new Data(details.getpID(), author, title, desciption, null);
         if (data.importData(details.getFileName()) )
         {
             Data olddata = this.data;
@@ -266,5 +294,11 @@ public class Project implements Serializable{
         return signature;
     }
     
-    
+    public String getUser() {
+        return Utils.getMD5(publicKey.getEncoded());
+    }
+
+    boolean autoExportProject() {
+        return exportProject();
+    }
 }

@@ -1,5 +1,6 @@
 package divvyhost.utils;
 
+import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import static divvyhost.configuration.Configuration.SIGN_ALGO;
 import static divvyhost.configuration.Configuration.SIGN_KEYSIZE;
 import java.io.BufferedReader;
@@ -60,6 +61,22 @@ public class Utils {
         }
         return null;
        
+    }
+    
+    /**
+     * Generate MD5 for given Input
+     * @param input
+     * @return MD5 String
+     */
+    public static String getMD5(byte[] input) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("MD5");
+            return Base64.encode(digest.digest(input));
+        } catch (NoSuchAlgorithmException ex) {
+            log.severe(ex.toString());
+            log.severe("MD5 Hashing Failed");
+        }
+        return null;
     }
     
     /**
@@ -215,5 +232,39 @@ public class Utils {
         }
         return null;
     }
+    
+    /**
+     * Try to Empty Directory
+     * @param directory 
+     */
+    public static void emptyDirectory(File directory) {
+        if(directory == null || !directory.isDirectory() || !directory.exists()) {
+            return;
+        }
+        List<File> allFiles = new ArrayList<File>();
+        allFiles.add(directory);
+        for(int i=0; i<allFiles.size();i++) {
+            File file = allFiles.get(i);
+            if(file.isDirectory()) {
+                for (File innerFile : file.listFiles()) {
+                    allFiles.add(innerFile);
+                }
+                
+            } else {
+                if (!file.delete())
+                    log.severe("Unable to Delete "+file);
+            }  
+        }
+        for(int i=0; i<allFiles.size();i++) {
+            File file = allFiles.get(i);
+            if(file.isDirectory()){
+                if (!file.delete())
+                    log.severe("Unable to Delete Directory "+file);
+            }
+                
+        }
+    }
+    
+    
     
 }

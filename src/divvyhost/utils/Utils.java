@@ -1,6 +1,5 @@
 package divvyhost.utils;
 
-import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import static divvyhost.configuration.Configuration.SIGN_ALGO;
 import static divvyhost.configuration.Configuration.SIGN_KEYSIZE;
 import java.io.BufferedReader;
@@ -25,6 +24,7 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -71,7 +71,7 @@ public class Utils {
     public static String getMD5(byte[] input) {
         try {
             MessageDigest digest = MessageDigest.getInstance("MD5");
-            return Base64.encode(digest.digest(input));
+            return Base64.getEncoder().encodeToString(digest.digest(input));
         } catch (NoSuchAlgorithmException ex) {
             log.severe(ex.toString());
             log.severe("MD5 Hashing Failed");
@@ -150,7 +150,6 @@ public class Utils {
      * @param is
      * @param directory
      * @return isUnzipped
-     * @throws Exception 
      */
     public static boolean unzip(InputStream is, File directory){
         ZipInputStream zis = new ZipInputStream(is);
@@ -187,7 +186,6 @@ public class Utils {
      * Zip directory to byte[]
      * @param directory
      * @return zippedContent
-     * @throws Exception 
      */
     public static byte[] zip(File directory) {
         if(directory == null || !directory.isDirectory() || !directory.exists()) {

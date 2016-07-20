@@ -2,6 +2,7 @@ package divvyhost;
 
 import divvyhost.GUI.Controller;
 import divvyhost.GUI.Main;
+import divvyhost.network.Scheduler;
 import divvyhost.project.Data;
 import divvyhost.project.Details;
 import divvyhost.project.Project;
@@ -29,6 +30,7 @@ public class DivvyHost {
     private Main gui;
     private Controller controller;
     private ProjectManager projectManager;
+    private Scheduler scheduler;
     
     private boolean guiLoading;
 
@@ -37,11 +39,13 @@ public class DivvyHost {
         guiLoading = true;
         controller = new Controller(this);
         projectManager = new ProjectManager();
+        scheduler = new Scheduler(projectManager, user.getUser());
         log.info("Divvy Host Created!");
     }
     
     public void start() {
         projectManager.loadAllProjects();
+        //scheduler.run();
         log.info("Waiting For GUI Loading...");
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {

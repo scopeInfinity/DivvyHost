@@ -26,12 +26,14 @@ public class User implements Serializable {
     private static final Logger log = Logger.getLogger(User.class.getName());
     private static final long serialVersionUID = 5966745447360552510L;
     
+    private static String filename   =  "user.dat";
+
+    
     private PrivateKey privatekey;
     private PublicKey publicKey;
     private String user;
     
-    private static String filename   =  "user.dat";
-
+    
     public User(PrivateKey privatekey, PublicKey publicKey, String user) {
         this.privatekey = privatekey;
         this.publicKey = publicKey;

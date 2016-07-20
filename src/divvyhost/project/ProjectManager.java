@@ -81,4 +81,25 @@ public class ProjectManager {
         log.severe("Project Not Available : "+pID);
         return null;
     }
+
+    /**
+     * Process other Server List
+     * Future : May implement Blacklisting Project
+     * @param othersList
+     * @return list of projects to be fetched
+     */
+    public List<Details> processOtherClientList(List<Details> othersList) {
+        List<Details> newList = new ArrayList<Details>();
+        for (Details newProject : othersList) {
+            if (availableProjects.containsKey(newProject.getpID())) {
+                // If Project is Newer
+                if (newProject.isNewer(availableProjects.get(newProject.getpID()).getDetails()))
+                    newList.add(newProject);
+            } else {
+                // If Project is not Present
+                 newList.add(newProject);
+            }
+        }
+        return newList;
+    }
 }

@@ -30,7 +30,7 @@ public class DivvyServer {
         this.projectManager = projectManager;
         this.user = user;
         
-        server = new Server(){
+        server = new Server(16384, 2048){
 
             @Override
             protected Connection newConnection() {
@@ -62,21 +62,25 @@ public class DivvyServer {
 
         @Override
         public List<Details> listDetails() {
+            log.info("Client Requesting List of Projects");
             return projectManager.listDetails();
         }
 
         @Override
-        public Project getProject(UUID uuid) {
-            return projectManager.getProject(uuid.toString());
+        public Project getProject(String uuid) {
+            log.info("Client Requesting Project "+uuid);
+            return projectManager.getProject(uuid);
         }
 
         @Override
         public boolean isDivvyServer() {
+            log.info("Client Tested isDivvyServer()");
             return true;
         }
 
         @Override
         public String getUser() {
+            log.info("Client taken User");
             return user;
         }
         

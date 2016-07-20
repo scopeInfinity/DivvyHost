@@ -27,6 +27,10 @@ public class Scheduler implements Runnable{
         networkManager.startSync();
     }
     
+    public void start() {
+        thread.start();
+    }
+    
     @Override
     public void run() {
         try {

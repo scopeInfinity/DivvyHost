@@ -27,10 +27,16 @@ public class Project implements Serializable{
     private static final Logger log = Logger.getLogger(Project.class.getName());
     private static final long serialVersionUID = 2599785789517212065L;
             
-    private PublicKey publicKey;
+    private byte[] publicKey;
     private Details details;
     private Data data;
     private byte[] signature;
+
+    /**
+     * Kryo Serialization
+     */
+    public Project() {
+    }
 
     /**
      * Create A fresh Project, need to call GenerateSign
@@ -40,13 +46,13 @@ public class Project implements Serializable{
      * @param signature 
      */
     public Project(PublicKey publicKey, Details details, Data data) {
-        this.publicKey = publicKey;
+        this.publicKey = publicKey.getEncoded();
         this.details = details;
         this.data = data;
     }
 
     public Project(PublicKey publicKey, Details details, Data data, byte[] signature) {
-        this.publicKey = publicKey;
+        this.publicKey = publicKey.getEncoded();
         this.details = details;
         this.data = data;
         this.signature = signature;
@@ -98,7 +104,10 @@ public class Project implements Serializable{
         } catch (ClassNotFoundException ex) {
             log.severe(ex.toString());
             log.severe("Invalid/Outdated File");
-        }
+        } catch (Exception ex) {
+            log.severe(ex.toString());
+            log.severe("Invalid/Outdated File");
+        } 
         return null;
     }
     
@@ -156,7 +165,7 @@ public class Project implements Serializable{
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             oos = new ObjectOutputStream(baos);
             oos.writeObject(data);
-            return Utils.verifyData(baos.toByteArray(), signature, publicKey);
+            return Utils.verifyData(baos.toByteArray(), signature, getPublicKey());
         } catch (IOException ex) {
             log.severe(ex.toString());
         } finally {
@@ -287,7 +296,10 @@ public class Project implements Serializable{
     }
     
     public PublicKey getPublicKey() {
-        return publicKey;
+        PublicKey key = Utils.getDSAPublicKey(publicKey);
+        if (key == null) 
+            log.severe("Public Key Retrive Failed : "+getDetails().getpID());
+        return key;
     }
 
     public byte[] getSignature() {
@@ -295,7 +307,7 @@ public class Project implements Serializable{
     }
     
     public String getUser() {
-        return Utils.getMD5(publicKey.getEncoded());
+        return Utils.getMD5(publicKey);
     }
 
     boolean autoExportProject() {

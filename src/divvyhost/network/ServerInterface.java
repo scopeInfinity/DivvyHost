@@ -3,7 +3,6 @@ package divvyhost.network;
 import divvyhost.project.Details;
 import divvyhost.project.Project;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * ServerInterface for RMI
@@ -22,7 +21,7 @@ public interface ServerInterface {
      * @param uuid
      * @return project
      */
-    public Project getProject(UUID uuid);
+    public Project getProject(String uuid);
     
     /**
      * For Confirmation RMI is Working and Server is valid

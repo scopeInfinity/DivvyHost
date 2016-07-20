@@ -14,7 +14,7 @@ public class Configuration {
     
     public static long SCHEDULER_REFRESH_TIMER  = 1*60*1000;
     
-    public static boolean AUTO_EXPORTPROJECT_ONLOAD = true;
+    public static boolean AUTO_EXPORTPROJECT_ONLOAD = false;
     
     public static String SIGN_ALGO = "DSA";
     public static int SIGN_KEYSIZE  = 1024; 

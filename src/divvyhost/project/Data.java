@@ -22,15 +22,20 @@ public class Data implements Serializable{
     private String author;
     
     // Project ID for Cross Verification
-    private UUID pID;
-    
+    private String pID;
 
+    /**
+     * Kryo Serialization
+     */
+    public Data() {
+    }
+    
     public Data(UUID pID, String author, String title, String description, byte[] data) {
         this.title = title;
         this.description = description;
         this.data = data;
         this.author = author;
-        this.pID = pID;
+        this.pID = pID.toString();
     }
 
     public Data(UUID pID, String author, String title, String description) {
@@ -38,7 +43,7 @@ public class Data implements Serializable{
         this.description = description;
         this.data = null;
         this.author = author;
-        this.pID = pID;
+        this.pID = pID.toString();
     }
 
     public void setData(byte[] data) {
@@ -46,7 +51,7 @@ public class Data implements Serializable{
     }
 
     public UUID getpID() {
-        return pID;
+        return UUID.fromString(pID);
     }
     
     public byte[] getData() {

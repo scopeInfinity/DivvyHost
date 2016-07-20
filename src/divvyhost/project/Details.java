@@ -10,7 +10,7 @@ import java.util.UUID;
 public class Details implements Serializable {
     private static final long serialVersionUID = 6008569331922371591L;
     
-    private UUID pID;
+    private String pID;
     private long lastModified;
 
     /**
@@ -18,17 +18,17 @@ public class Details implements Serializable {
      */
     public Details() {
         lastModified = System.currentTimeMillis();
-        pID = UUID.randomUUID();
+        pID = UUID.randomUUID().toString();
     }
 
     
     public Details(UUID pID, long lastModified) {
-        this.pID = pID;
+        this.pID = pID.toString();
         this.lastModified = lastModified;
     }
 
     public UUID getpID() {
-        return pID;
+        return UUID.fromString(pID);
     }
 
     public long getLastModified() {
@@ -47,7 +47,7 @@ public class Details implements Serializable {
     @Override
     public boolean equals(Object other) {
         if(other instanceof Details)
-            return pID ==  ((Details)other).getpID();
+            return getpID().equals(((Details)other).getpID());
         return false;
     }
     

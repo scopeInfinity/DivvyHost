@@ -15,6 +15,7 @@ import java.io.OutputStream;
 import java.security.DigestInputStream;
 import java.security.InvalidKeyException;
 import java.security.Key;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
@@ -23,6 +24,8 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -93,6 +96,24 @@ public class Utils {
             log.info(SIGN_ALGO+" Key Generated!");
             return new Pair<PublicKey, PrivateKey>(publicKey, privateKey);
         } catch (NoSuchAlgorithmException ex) {
+            log.severe(ex.toString());
+        }
+        return null;
+    }
+    
+    /**
+     * Get PublicKey Object from DSA Encoded Public Key
+     * @param publicKey
+     * @return PublicKey
+     */
+    public static PublicKey getDSAPublicKey(byte[] publicKey) {
+        try {
+            X509EncodedKeySpec encodedKeySpec = new X509EncodedKeySpec(publicKey);
+            KeyFactory keyFactory = KeyFactory.getInstance("DSA");
+            return keyFactory.generatePublic(encodedKeySpec);
+        } catch (NoSuchAlgorithmException ex) {
+            log.severe(ex.toString());
+        } catch (InvalidKeySpecException ex) {
             log.severe(ex.toString());
         }
         return null;

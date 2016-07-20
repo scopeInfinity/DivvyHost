@@ -27,7 +27,7 @@ public class ProjectManager {
         Paths path = new Paths();
         File projectDir = path.getProjectsDir();
         projectDir.mkdirs();
-        log.info("Trying to All Projects");
+        log.info("Trying to load All Projects");
         availableProjects = new HashMap<>();
         for (File projectFile : projectDir.listFiles()) {
             Project project = Project.getInstance(projectFile);

@@ -13,6 +13,7 @@ import divvyhost.utils.Paths;
 import divvyhost.utils.Utils;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -45,7 +46,7 @@ public class DivvyHost {
     
     public void start() {
         projectManager.loadAllProjects();
-        //scheduler.run();
+        scheduler.start();
         log.info("Waiting For GUI Loading...");
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {

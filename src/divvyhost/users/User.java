@@ -27,7 +27,8 @@ public class User implements Serializable {
     private static final long serialVersionUID = 5966745447360552510L;
     
     private static String filename   =  "user.dat";
-
+    
+    private static User instance;
     
     private PrivateKey privatekey;
     private PublicKey publicKey;
@@ -68,12 +69,15 @@ public class User implements Serializable {
      * @return User
      */
     public static User loadUser() {
+        if (instance != null) 
+            return instance;
+        
         if (!isUserExists()) {
             log.info("User Not Exists\nCreating User");
             User user = newUser();
             log.info("New User : "+user.getUser());
             user.save();
-            return user;
+            return instance = user;
         }
         FileInputStream fis = null;
         try {
@@ -82,7 +86,7 @@ public class User implements Serializable {
             User user = (User) ois.readObject();
             ois.close();
             log.info("User Loaded : "+user.getUser());
-            return user;
+            return instance = user;
             
         } catch (FileNotFoundException ex) {
             log.severe(ex.toString());
@@ -98,7 +102,7 @@ public class User implements Serializable {
             }
         }
         
-       log.info("User Load Error!");
+        log.info("User Load Error!");
         return null;
         
     }

@@ -40,6 +40,7 @@ public class NetworkManager {
         else {
             divvyClient.sync();
         }
+        divvyClient.disconnect();
     }
 
     public ProjectManager getProjectManager() {

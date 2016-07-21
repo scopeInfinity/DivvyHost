@@ -38,26 +38,28 @@ public class NetworkRegister {
         Kryo kryo = endPoint.getKryo();
         ObjectSpace.registerClasses(kryo);
         
-        registerClass(endPoint, kryo, ClientInterface.class);
-        registerClass(endPoint, kryo, ServerInterface.class);
-        registerClass(endPoint, kryo, Project.class);
-        registerClass(endPoint, kryo, Data.class);
-        registerClass(endPoint, kryo, Details.class);
+        kryo.register(ClientInterface.class);
+        kryo.register(ServerInterface.class);
+        kryo.register(Project.class);
+        kryo.register(Data.class);
+        kryo.register(Details.class);
         
-        registerClass(endPoint, kryo, ArrayList.class);
-        registerClass(endPoint, kryo, List.class);
-        registerClass(endPoint, kryo, byte[].class);
+        kryo.register(ArrayList.class);
+        kryo.register(List.class);
+        kryo.register(byte[].class);
         
-        registerClass(endPoint, kryo, PublicKey.class);
+        kryo.register(PublicKey.class);
         
         // UUID is not Serializable
         // Thus no Member containing UUID should not be passed using kryonet
-        registerClass(endPoint, kryo, UUID.class);
+        kryo.register(UUID.class);
         
         
     }
     
+    
     /**
+     * For Recursively Registering Classes
      * Maintain Collection of classes already Registered
      */
     private static HashMap<EndPoint, Set<Class> > alreadyRegistered;
@@ -110,7 +112,7 @@ public class NetworkRegister {
         
         //Recursive goint in bottom
         for (ClassPair classPair : list) {
-            registerClass(endPoint, kryo, classPair.getSecond());
+            kryo.register(classPair.getSecond());
         }
         
     }

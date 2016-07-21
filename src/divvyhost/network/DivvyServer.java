@@ -30,7 +30,7 @@ public class DivvyServer {
         this.projectManager = projectManager;
         this.user = user;
         
-        server = new Server(16384, 2048){
+        server = new Server(Configuration.BUFFER_SIZE_SERVER1, Configuration.BUFFER_SIZE_SERVER2){
 
             @Override
             protected Connection newConnection() {

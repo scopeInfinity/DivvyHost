@@ -16,6 +16,12 @@ public class Configuration {
     
     public static boolean AUTO_EXPORTPROJECT_ONLOAD = false;
     
+    public static int BUFFER_SIZE_SERVER1 = 10*1024*1024;
+    public static int BUFFER_SIZE_SERVER2 = 10*1024*1024;
+    public static int BUFFER_SIZE_CLIENT1 = 10*1024*1024;
+    public static int BUFFER_SIZE_CLIENT2 = 10*1024*1024;
+    
+    
     public static String SIGN_ALGO = "DSA";
     public static int SIGN_KEYSIZE  = 1024; 
     

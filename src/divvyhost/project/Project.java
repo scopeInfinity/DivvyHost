@@ -1,5 +1,6 @@
 package divvyhost.project;
 
+import divvyhost.users.User;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -103,10 +104,10 @@ public class Project implements Serializable{
            log.severe(ex.toString());
         } catch (ClassNotFoundException ex) {
             log.severe(ex.toString());
-            log.severe("Invalid/Outdated File");
+            log.severe("Outdated File");
         } catch (Exception ex) {
             log.severe(ex.toString());
-            log.severe("Invalid/Outdated File");
+            log.severe("Invalid File");
         } 
         return null;
     }
@@ -245,12 +246,16 @@ public class Project implements Serializable{
      * @return isExported
      */
     public boolean exportProject() {
-        if (data == null)
-        {
+        if (data == null) {
             log.severe(details.getFileName()+" Data Not Available for Export!");
             return false;
         }
-        return data.exportData(details.getFileName());
+        if (signValidate())
+            return data.exportData(details.getFileName());
+        else {
+            log.severe("Project ["+getDetails().getpID()+"] Signing Verify Failed!");
+            return false;
+        }
     }
     
     /**
@@ -261,6 +266,12 @@ public class Project implements Serializable{
      * @return isImported
      */
     public boolean importProject(String author, String title, String desciption, PrivateKey privateKey) {
+        
+        if (!isCurrentUserOwner()) {
+            log.severe("Project "+getDetails().getpID()+ " is Owned By Different User");
+            return false;
+        }
+        
         if (author==null && this.data!=null)
             author = this.data.getAuthor();
         if (title==null && this.data!=null)
@@ -312,5 +323,16 @@ public class Project implements Serializable{
 
     boolean autoExportProject() {
         return exportProject();
+    }
+    
+    /**
+     * Check if this Project is Owned by Current User
+     * @return isCurrentUserOwner()
+     */
+    private boolean isCurrentUserOwner() {
+        User user = User.loadUser();
+        if (user.getPublicKey().equals(getPublicKey()))
+            return true;
+        return false;
     }
 }

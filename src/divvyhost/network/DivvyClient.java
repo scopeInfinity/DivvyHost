@@ -83,7 +83,7 @@ public class DivvyClient implements ClientInterface{
             log.severe("No Scanned Host");
             return false;
         }
-        client = new Client(8192,2048);
+        client = new Client(Configuration.BUFFER_SIZE_CLIENT1, Configuration.BUFFER_SIZE_CLIENT2);
         NetworkRegister.register(client);
         divvyServer = ObjectSpace.getRemoteObject(client, NetworkRegister.RMI_SERVER, ServerInterface.class);
         
@@ -129,6 +129,7 @@ public class DivvyClient implements ClientInterface{
         log.info("Number of New Project of Server["+lastScannedAddress.getHostAddress()+"] "+fetchThese.size());
         
         for (Details projectDetails : fetchThese) {
+            
             Project newProject = divvyServer.getProject(projectDetails.getpID().toString());
             if(newProject == null)
             {

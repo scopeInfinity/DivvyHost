@@ -64,7 +64,7 @@ public class Controller {
         Project project = host.getProjectManager().getProject(pID);
         if (project!=null) {
                if(!project.importProject(null, null, null, host.getUser().getPrivatekey())) 
-                   return "Not Imported(Unauthorised User or something else)";
+                   return "Import Failed [Possiblity - Unauthorised User or SomeOther Reason]";
                else
                {
                    if (project.save()) {

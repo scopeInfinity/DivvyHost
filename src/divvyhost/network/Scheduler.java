@@ -17,25 +17,39 @@ public class Scheduler implements Runnable{
     private Thread thread;
     private NetworkManager networkManager;
     
+    private boolean syncInProcess;
+    
     public Scheduler(ProjectManager manager, String user) {
         thread = new Thread(this,"Scheduler");
         networkManager = new NetworkManager(manager,user);
     }
     
     private void periodicEvent() {
+        //Only one Sync at a time
+        if(syncInProcess)
+            return;
+        syncInProcess = true;
+        
         log.info("Scheduler Perdiodic Start");
-        networkManager.startSync();
+        try{
+            networkManager.startSync();
+        }catch(Exception e) {
+            log.severe("Scheduler Sync Error " + e.toString());
+        }
+        syncInProcess = false;
     }
     
     public void start() {
         thread.start();
+        syncInProcess = false;
     }
     
     @Override
     public void run() {
         try {
             while(true)
-            {     periodicEvent();
+            {     
+                periodicEvent();
                 thread.sleep(SCHEDULER_REFRESH_TIMER);
             }
         } catch (InterruptedException ex) {

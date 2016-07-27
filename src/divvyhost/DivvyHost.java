@@ -15,6 +15,7 @@ import divvyhost.utils.Utils;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
 import javax.swing.SwingUtilities;
@@ -33,6 +34,8 @@ public class DivvyHost {
     private Scheduler scheduler;
     
     private boolean guiLoading;
+    
+    private boolean needGUI;
 
     public DivvyHost() {
         user = User.loadUser();
@@ -46,17 +49,20 @@ public class DivvyHost {
     public void start() {
         projectManager.loadAllProjects();
         scheduler.start();
-        log.info("Waiting For GUI Loading...");
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                Main main = new Main(controller);
-                main.setVisible(true);
-                main.setTitle("Divvy Host");
-                setUIWaitOver();
-            }
-        });
-        while(guiLoading);
-        log.info("GUI Loading Done!");
+        if (needGUI) {
+            log.info("Waiting For GUI Loading...");
+            java.awt.EventQueue.invokeLater(new Runnable() {
+                public void run() {
+                    Main main = new Main(controller);
+                    main.setVisible(true);
+                    main.setTitle("Divvy Host");
+                    setUIWaitOver();
+                }
+            });
+            while(guiLoading);
+            log.info("GUI Loading Done!");
+        } else
+            log.info("GUI Disabled");
         
     }
     
@@ -69,8 +75,20 @@ public class DivvyHost {
      */
     public static void main(String[] args) {
         DivvyHost divvy = new DivvyHost();
+        divvy.checkParameters(Arrays.asList(args));
         divvy.start();
         
+    }
+    
+    /**
+     * Use command-line parameters
+     * @param param 
+     */
+    private void checkParameters(List<String> param){
+        if (param.contains("-nogui"))
+            needGUI = false;
+        else 
+            needGUI = true;
     }
     
     /**

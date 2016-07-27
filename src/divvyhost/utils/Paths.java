@@ -5,7 +5,7 @@ import java.io.File;
 import java.util.logging.Logger;
 
 /**
- *
+ * Handles Directory Paths 
  * @author scopeinfinity
  */
 public class Paths {

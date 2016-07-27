@@ -27,7 +27,7 @@ public class ProjectManager {
         Paths path = new Paths();
         File projectDir = path.getProjectsDir();
         projectDir.mkdirs();
-        log.info("Trying to All Projects");
+        log.info("Trying to load All Projects");
         availableProjects = new HashMap<>();
         for (File projectFile : projectDir.listFiles()) {
             Project project = Project.getInstance(projectFile);
@@ -53,7 +53,7 @@ public class ProjectManager {
      * @return  List of All Details available Projects
      */
     public List<Details> listDetails() {
-        ArrayList<Details> list = new ArrayList();
+        ArrayList<Details> list = new ArrayList<Details>();
         for (Map.Entry<UUID, Project> entrySet : availableProjects.entrySet()) {
             UUID key = entrySet.getKey();
             Project project = entrySet.getValue();
@@ -65,7 +65,7 @@ public class ProjectManager {
      * @return  List of All available Projects
      */
     public List<Project> listCompleteDetails() {
-        ArrayList<Project> list = new ArrayList();
+        ArrayList<Project> list = new ArrayList<Project>();
         for (Map.Entry<UUID, Project> entrySet : availableProjects.entrySet()) {
             UUID key = entrySet.getKey();
             Project project = entrySet.getValue();
@@ -80,5 +80,26 @@ public class ProjectManager {
         }
         log.severe("Project Not Available : "+pID);
         return null;
+    }
+
+    /**
+     * Process other Server List
+     * Future : May implement Blacklisting Project
+     * @param othersList
+     * @return list of projects to be fetched
+     */
+    public List<Details> processOtherClientList(List<Details> othersList) {
+        List<Details> newList = new ArrayList<Details>();
+        for (Details newProject : othersList) {
+            if (availableProjects.containsKey(newProject.getpID())) {
+                // If Project is Newer
+                if (newProject.isNewer(availableProjects.get(newProject.getpID()).getDetails()))
+                    newList.add(newProject);
+            } else {
+                // If Project is not Present
+                 newList.add(newProject);
+            }
+        }
+        return newList;
     }
 }

@@ -1,5 +1,6 @@
 package divvyhost.project;
 
+import divvyhost.users.User;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -27,10 +28,16 @@ public class Project implements Serializable{
     private static final Logger log = Logger.getLogger(Project.class.getName());
     private static final long serialVersionUID = 2599785789517212065L;
             
-    private PublicKey publicKey;
+    private byte[] publicKey;
     private Details details;
     private Data data;
     private byte[] signature;
+
+    /**
+     * Kryo Serialization
+     */
+    public Project() {
+    }
 
     /**
      * Create A fresh Project, need to call GenerateSign
@@ -40,13 +47,13 @@ public class Project implements Serializable{
      * @param signature 
      */
     public Project(PublicKey publicKey, Details details, Data data) {
-        this.publicKey = publicKey;
+        this.publicKey = publicKey.getEncoded();
         this.details = details;
         this.data = data;
     }
 
     public Project(PublicKey publicKey, Details details, Data data, byte[] signature) {
-        this.publicKey = publicKey;
+        this.publicKey = publicKey.getEncoded();
         this.details = details;
         this.data = data;
         this.signature = signature;
@@ -97,8 +104,11 @@ public class Project implements Serializable{
            log.severe(ex.toString());
         } catch (ClassNotFoundException ex) {
             log.severe(ex.toString());
-            log.severe("Invalid/Outdated File");
-        }
+            log.severe("Outdated File");
+        } catch (Exception ex) {
+            log.severe(ex.toString());
+            log.severe("Invalid File");
+        } 
         return null;
     }
     
@@ -156,7 +166,7 @@ public class Project implements Serializable{
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             oos = new ObjectOutputStream(baos);
             oos.writeObject(data);
-            return Utils.verifyData(baos.toByteArray(), signature, publicKey);
+            return Utils.verifyData(baos.toByteArray(), signature, getPublicKey());
         } catch (IOException ex) {
             log.severe(ex.toString());
         } finally {
@@ -236,12 +246,16 @@ public class Project implements Serializable{
      * @return isExported
      */
     public boolean exportProject() {
-        if (data == null)
-        {
+        if (data == null) {
             log.severe(details.getFileName()+" Data Not Available for Export!");
             return false;
         }
-        return data.exportData(details.getFileName());
+        if (signValidate())
+            return data.exportData(details.getFileName());
+        else {
+            log.severe("Project ["+getDetails().getpID()+"] Signing Verify Failed!");
+            return false;
+        }
     }
     
     /**
@@ -252,6 +266,12 @@ public class Project implements Serializable{
      * @return isImported
      */
     public boolean importProject(String author, String title, String desciption, PrivateKey privateKey) {
+        
+        if (!isCurrentUserOwner()) {
+            log.severe("Project "+getDetails().getpID()+ " is Owned By Different User");
+            return false;
+        }
+        
         if (author==null && this.data!=null)
             author = this.data.getAuthor();
         if (title==null && this.data!=null)
@@ -287,7 +307,10 @@ public class Project implements Serializable{
     }
     
     public PublicKey getPublicKey() {
-        return publicKey;
+        PublicKey key = Utils.getDSAPublicKey(publicKey);
+        if (key == null) 
+            log.severe("Public Key Retrive Failed : "+getDetails().getpID());
+        return key;
     }
 
     public byte[] getSignature() {
@@ -295,10 +318,21 @@ public class Project implements Serializable{
     }
     
     public String getUser() {
-        return Utils.getMD5(publicKey.getEncoded());
+        return Utils.getMD5(publicKey);
     }
 
     boolean autoExportProject() {
         return exportProject();
+    }
+    
+    /**
+     * Check if this Project is Owned by Current User
+     * @return isCurrentUserOwner()
+     */
+    private boolean isCurrentUserOwner() {
+        User user = User.loadUser();
+        if (user.getPublicKey().equals(getPublicKey()))
+            return true;
+        return false;
     }
 }

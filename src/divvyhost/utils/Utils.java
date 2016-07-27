@@ -1,6 +1,5 @@
 package divvyhost.utils;
 
-import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import static divvyhost.configuration.Configuration.SIGN_ALGO;
 import static divvyhost.configuration.Configuration.SIGN_KEYSIZE;
 import java.io.BufferedReader;
@@ -16,6 +15,7 @@ import java.io.OutputStream;
 import java.security.DigestInputStream;
 import java.security.InvalidKeyException;
 import java.security.Key;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
@@ -24,7 +24,10 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
+import divvyhost.utils.Base64;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -99,6 +102,24 @@ public class Utils {
     }
     
     /**
+     * Get PublicKey Object from DSA Encoded Public Key
+     * @param publicKey
+     * @return PublicKey
+     */
+    public static PublicKey getDSAPublicKey(byte[] publicKey) {
+        try {
+            X509EncodedKeySpec encodedKeySpec = new X509EncodedKeySpec(publicKey);
+            KeyFactory keyFactory = KeyFactory.getInstance("DSA");
+            return keyFactory.generatePublic(encodedKeySpec);
+        } catch (NoSuchAlgorithmException ex) {
+            log.severe(ex.toString());
+        } catch (InvalidKeySpecException ex) {
+            log.severe(ex.toString());
+        }
+        return null;
+    }
+    
+    /**
      * Generate Sign using DSA
      * @param data
      * @param privateKey
@@ -150,7 +171,6 @@ public class Utils {
      * @param is
      * @param directory
      * @return isUnzipped
-     * @throws Exception 
      */
     public static boolean unzip(InputStream is, File directory){
         ZipInputStream zis = new ZipInputStream(is);
@@ -187,7 +207,6 @@ public class Utils {
      * Zip directory to byte[]
      * @param directory
      * @return zippedContent
-     * @throws Exception 
      */
     public static byte[] zip(File directory) {
         if(directory == null || !directory.isDirectory() || !directory.exists()) {

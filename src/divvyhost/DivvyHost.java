@@ -2,21 +2,22 @@ package divvyhost;
 
 import divvyhost.GUI.Controller;
 import divvyhost.GUI.Main;
+import divvyhost.network.Scheduler;
 import divvyhost.project.Data;
 import divvyhost.project.Details;
 import divvyhost.project.Project;
 import divvyhost.project.ProjectManager;
 import divvyhost.users.User;
+import divvyhost.utils.Base64;
 import divvyhost.utils.Pair;
 import divvyhost.utils.Paths;
 import divvyhost.utils.Utils;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.Base64;
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.logging.Logger;
 import javax.swing.SwingUtilities;
-import javax.xml.soap.Detail;
 
 /**
  *
@@ -29,6 +30,7 @@ public class DivvyHost {
     private Main gui;
     private Controller controller;
     private ProjectManager projectManager;
+    private Scheduler scheduler;
     
     private boolean guiLoading;
 
@@ -37,11 +39,13 @@ public class DivvyHost {
         guiLoading = true;
         controller = new Controller(this);
         projectManager = new ProjectManager();
+        scheduler = new Scheduler(projectManager, user.getUser());
         log.info("Divvy Host Created!");
     }
     
     public void start() {
         projectManager.loadAllProjects();
+        scheduler.start();
         log.info("Waiting For GUI Loading...");
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
@@ -116,8 +120,8 @@ public class DivvyHost {
         System.out.println("LastModified : "+oldProject.getDetails().getLastModified());
         System.out.println("Title : "+oldProject.getData().getTitle());
         System.out.println("Description : "+oldProject.getData().getDescription());
-        System.out.println("Signature : "+Base64.getEncoder().encodeToString(oldProject.getSignature()));
-        System.out.println("PublicKey : "+Base64.getEncoder().encodeToString(oldProject.getPublicKey().getEncoded()));
+        System.out.println("Signature : "+Base64.encode(oldProject.getSignature()));
+        System.out.println("PublicKey : "+Base64.encode(oldProject.getPublicKey().getEncoded()));
         System.out.println("Data Null : "+(oldProject.getData().getData()==null));
         
         if(oldProject.getData().getData()!=null)

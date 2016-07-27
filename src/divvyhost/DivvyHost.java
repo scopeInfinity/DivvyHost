@@ -2,6 +2,7 @@ package divvyhost;
 
 import divvyhost.GUI.Controller;
 import divvyhost.GUI.Main;
+import divvyhost.configuration.Configuration;
 import divvyhost.network.Scheduler;
 import divvyhost.project.Data;
 import divvyhost.project.Details;
@@ -46,7 +47,13 @@ public class DivvyHost {
         log.info("Divvy Host Created!");
     }
     
-    public void start() {
+    public boolean start() {
+        Configuration configuration = new Configuration();
+        if (!configuration.isLoadedFine()) {
+            log.severe("Unable to load Configurations");
+            return false;
+        }
+        
         projectManager.loadAllProjects();
         scheduler.start();
         if (needGUI) {
@@ -63,7 +70,7 @@ public class DivvyHost {
             log.info("GUI Loading Done!");
         } else
             log.info("GUI Disabled");
-        
+        return true;
     }
     
     public void setUIWaitOver() {
@@ -76,7 +83,8 @@ public class DivvyHost {
     public static void main(String[] args) {
         DivvyHost divvy = new DivvyHost();
         divvy.checkParameters(Arrays.asList(args));
-        divvy.start();
+        if(!divvy.start())
+            log.severe("Divvy Start Failed!");
         
     }
     

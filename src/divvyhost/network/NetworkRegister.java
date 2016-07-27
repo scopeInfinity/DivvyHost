@@ -13,6 +13,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.security.PublicKey;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -102,7 +103,7 @@ public class NetworkRegister {
         }
         
         //Sorting in Order of ClassName locally in recurstion
-        list.sort(null);
+        Collections.sort(list);
         
         //Registering Classes in Sorted Order
         for (ClassPair classPair : list) {

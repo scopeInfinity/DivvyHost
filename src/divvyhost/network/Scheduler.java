@@ -32,6 +32,7 @@ public class Scheduler implements Runnable{
         
         log.info("Scheduler Perdiodic Start");
         try{
+            log.info("Going for Sync");
             networkManager.startSync();
         }catch(Exception e) {
             log.severe("Scheduler Sync Error " + e.toString());

@@ -15,7 +15,9 @@ import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,11 +34,24 @@ public class DivvyClient implements ClientInterface{
     private ServerInterface divvyServer;
     
     private ProjectManager projectManager; 
+    private Configuration configuration;
     private String user;
+    
+    private Set<InetAddress> serverDone;
     
     public DivvyClient(ProjectManager projectManager, String user) {
         this.projectManager = projectManager;
         this.user = user;
+        serverDone = new HashSet<InetAddress>();
+        configuration = new Configuration();
+        initClient();        
+            
+    }
+    
+    private void initClient() {
+        client = new Client(Configuration.BUFFER_SIZE_CLIENT1, Configuration.BUFFER_SIZE_CLIENT2);
+        NetworkRegister.register(client);
+        divvyServer = ObjectSpace.getRemoteObject(client, NetworkRegister.RMI_SERVER, ServerInterface.class);
     }
     
     /**
@@ -45,35 +60,66 @@ public class DivvyClient implements ClientInterface{
      */
     public boolean scanNetwork() {
         lastScannedAddress = null;
-        try {
-            //        Client client = new Client();
+        firstScannedServer = null;
+        isLastFreshServer = false;
+        
+//        try {
+//              Client client = new Client();
 //        lastScannedAddress = client.discoverHost(Configuration.PORT_UCP, Configuration.PORT_SCAN_TIMEOUT);
             
-            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
-            while(lastScannedAddress==null && networkInterfaces.hasMoreElements()){
-                NetworkInterface networkInterface = networkInterfaces.nextElement();
-                
-                for (InterfaceAddress interfaceAddress : networkInterface.getInterfaceAddresses()) {
-                    if (checkServerOnSubnet(interfaceAddress.getAddress(), interfaceAddress.getNetworkPrefixLength())) {
-                        log.info("Server Found on "+networkInterface.getDisplayName());
-                        break;
-                    }
-                   
-                }
-
-            }
-        } catch (SocketException ex) {
-            log.severe(ex.toString());
-        }
+            //Scanning Network Cards
+//            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+//            while(lastScannedAddress==null && networkInterfaces.hasMoreElements()){
+//                NetworkInterface networkInterface = networkInterfaces.nextElement();
+//                
+//                for (InterfaceAddress interfaceAddress : networkInterface.getInterfaceAddresses()) {
+//                    if (checkServerOnSubnet(interfaceAddress.getAddress(), interfaceAddress.getNetworkPrefixLength())) {
+//                        log.info("Server Found on "+networkInterface.getDisplayName());
+//                        break;
+//                    }
+//                   
+//                }
+//
+//            }
+//        } catch (SocketException ex) {
+//            log.severe(ex.toString());
+//        }
         
-        if(lastScannedAddress == null) {
+        //Using Configuration File
+       if (checkServerOnSubnet(configuration.getInternalIP(), configuration.getPrefixLength())) {
+           log.info("Server Found");
+       }           
+        if(firstScannedServer == null) {
             log.info("No Server Found");
             return false;
         }
+        
+        if(lastScannedAddress == null) {
+            log.info("No New Server Found, Using already scanned one ["+firstScannedServer+"]");
+            lastScannedAddress = firstScannedServer;
+            serverDone.clear();
+            serverDone.add(lastScannedAddress);
+        }
+        
         log.info("Server["+lastScannedAddress.getHostAddress()+"] Found");
         return true;
     }
+    
+    private boolean isLastFreshServer;
+    /**
+     * Return if Last Scanned Server is New
+     * @return isNew
+     */
+    public boolean isLastFreshServer() {
+        return isLastFreshServer;
+    }
 
+    public void makeServerHistoryClear() {
+        serverDone.clear();
+        isLastFreshServer = false;
+        lastScannedAddress = null;
+        firstScannedServer = null;
+    }
     /**
      * Connect if last find Server
      * @return isConnected
@@ -83,29 +129,33 @@ public class DivvyClient implements ClientInterface{
             log.severe("No Scanned Host");
             return false;
         }
-        client = new Client(Configuration.BUFFER_SIZE_CLIENT1, Configuration.BUFFER_SIZE_CLIENT2);
-        NetworkRegister.register(client);
-        divvyServer = ObjectSpace.getRemoteObject(client, NetworkRegister.RMI_SERVER, ServerInterface.class);
-        
-        client.start();
         try {
-            client.connect(Configuration.CLIENT_CONNECT_TIMEOUT, lastScannedAddress, Configuration.PORT_TCP, Configuration.PORT_UCP);
-            
-            //Verifing Other Server
-            try{
-                if(divvyServer.isDivvyServer()) {
-                    String otherUser = divvyServer.getUser();
-                    if (otherUser!=null && !otherUser.equals(user)) {
-                        return true;
-                    }
-                }
-            }catch(Exception e) {
-                log.severe("Invalid Client");
+            if (client!=null) {
+                initClient();
             }
             
-            return true;
-        } catch (IOException ex) {
-            log.severe(ex.toString());
+            client.start();
+            client.connect(Configuration.CLIENT_CONNECT_TIMEOUT, lastScannedAddress, Configuration.PORT_TCP, Configuration.PORT_UCP);
+
+                //Verifing Other Server
+                try{
+                    if(divvyServer.isDivvyServer()) {
+                        String otherUser = divvyServer.getUser();
+                        if (otherUser!=null && !otherUser.equals(user)) {
+                            return true;
+                        }
+                    }
+                }catch(Exception e) {
+                    log.severe("Invalid Client");
+                }
+
+                return true;
+        } catch (Exception ex) {
+                log.severe(ex.toString());
+        }
+        if(client!=null) {
+            client.stop();
+            client.close();
         }
         return false;
     }
@@ -115,6 +165,7 @@ public class DivvyClient implements ClientInterface{
      */
     public void disconnect() {
         if (client != null) {
+            client.stop();
             client.close();
         }
     }
@@ -210,12 +261,31 @@ public class DivvyClient implements ClientInterface{
             Socket socket = new Socket(address, Configuration.PORT_TCP);
             if(socket.isConnected()) {
                 socket.close();
-                lastScannedAddress = address;
-                return true;
+                if (addWorkingServer(address))
+                    return true;
             }
             socket.close();
         } catch (IOException ex) {
             
+        }
+        return false;
+    }
+    
+    
+    private InetAddress firstScannedServer;
+    /**
+     * Maintain List if Server is Already Scanned, it skips it
+     * @param address
+     * @return isNotSkipped
+     */
+    private boolean addWorkingServer(InetAddress address) {
+        if (firstScannedServer == null)
+            firstScannedServer = address;
+        
+        if(!serverDone.contains(address)) {
+            lastScannedAddress = address;
+            isLastFreshServer = true;
+            return true;
         }
         return false;
     }

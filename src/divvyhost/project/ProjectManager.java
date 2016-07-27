@@ -53,7 +53,7 @@ public class ProjectManager {
      * @return  List of All Details available Projects
      */
     public List<Details> listDetails() {
-        ArrayList<Details> list = new ArrayList();
+        ArrayList<Details> list = new ArrayList<Details>();
         for (Map.Entry<UUID, Project> entrySet : availableProjects.entrySet()) {
             UUID key = entrySet.getKey();
             Project project = entrySet.getValue();
@@ -65,7 +65,7 @@ public class ProjectManager {
      * @return  List of All available Projects
      */
     public List<Project> listCompleteDetails() {
-        ArrayList<Project> list = new ArrayList();
+        ArrayList<Project> list = new ArrayList<Project>();
         for (Map.Entry<UUID, Project> entrySet : availableProjects.entrySet()) {
             UUID key = entrySet.getKey();
             Project project = entrySet.getValue();

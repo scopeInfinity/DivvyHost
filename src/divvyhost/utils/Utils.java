@@ -27,7 +27,7 @@ import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
-import java.util.Base64;
+import divvyhost.utils.Base64;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -74,7 +74,7 @@ public class Utils {
     public static String getMD5(byte[] input) {
         try {
             MessageDigest digest = MessageDigest.getInstance("MD5");
-            return Base64.getEncoder().encodeToString(digest.digest(input));
+            return Base64.encode(digest.digest(input));
         } catch (NoSuchAlgorithmException ex) {
             log.severe(ex.toString());
             log.severe("MD5 Hashing Failed");

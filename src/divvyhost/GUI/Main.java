@@ -18,13 +18,13 @@ import javax.swing.plaf.basic.BasicListUI;
 public class Main extends javax.swing.JFrame {
 
     private Controller controller;
-    private DefaultListModel projectModellist;
+    private DefaultListModel<Project> projectModellist;
     private Project currentProject;
     
     public Main(Controller controller) {
         this.controller = controller;
         initComponents();
-        projectModellist =  new DefaultListModel();
+        projectModellist =  new DefaultListModel<Project>();
         jListProjects.setModel(projectModellist);
         
     }

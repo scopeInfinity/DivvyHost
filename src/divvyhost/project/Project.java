@@ -285,6 +285,7 @@ public class Project implements Serializable{
             Data olddata = this.data;
             this.data = data;
             if (generateSign(privateKey)) {
+                details.setLastModified();
                 log.info("["+details.getFileName()+"] Project Imported");
                 return true;
             } else {

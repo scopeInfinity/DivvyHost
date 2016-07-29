@@ -39,6 +39,11 @@ public class Details implements Serializable {
         return pID.toString();
     }
 
+    public void setLastModified() {
+        this.lastModified = System.currentTimeMillis();;
+    }
+    
+
     /**
      * Equals in Sense of Project ID
      * @param obj
@@ -57,7 +62,7 @@ public class Details implements Serializable {
      * @return isNew
      */
     public boolean isNewer(Details other){
-        return (lastModified < other.lastModified); 
+        return (lastModified > other.lastModified); 
     }
     
     

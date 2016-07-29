@@ -21,6 +21,7 @@ public class Scheduler implements Runnable{
     
     public Scheduler(ProjectManager manager, String user) {
         thread = new Thread(this,"Scheduler");
+        thread.setPriority(Thread.MIN_PRIORITY);
         networkManager = new NetworkManager(manager,user);
     }
     
@@ -32,6 +33,7 @@ public class Scheduler implements Runnable{
         
         log.info("Scheduler Perdiodic Start");
         try{
+            log.info("Going for Sync");
             networkManager.startSync();
         }catch(Exception e) {
             log.severe("Scheduler Sync Error " + e.toString());

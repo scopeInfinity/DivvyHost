@@ -2,6 +2,7 @@ package divvyhost;
 
 import divvyhost.GUI.Controller;
 import divvyhost.GUI.Main;
+import divvyhost.configuration.Configuration;
 import divvyhost.network.Scheduler;
 import divvyhost.project.Data;
 import divvyhost.project.Details;
@@ -15,6 +16,7 @@ import divvyhost.utils.Utils;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
 import javax.swing.SwingUtilities;
@@ -33,6 +35,8 @@ public class DivvyHost {
     private Scheduler scheduler;
     
     private boolean guiLoading;
+    
+    private boolean needGUI;
 
     public DivvyHost() {
         user = User.loadUser();
@@ -43,21 +47,30 @@ public class DivvyHost {
         log.info("Divvy Host Created!");
     }
     
-    public void start() {
+    public boolean start() {
+        Configuration configuration = new Configuration();
+        if (!configuration.isLoadedFine()) {
+            log.severe("Unable to load Configurations");
+            return false;
+        }
+        
         projectManager.loadAllProjects();
         scheduler.start();
-        log.info("Waiting For GUI Loading...");
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                Main main = new Main(controller);
-                main.setVisible(true);
-                main.setTitle("Divvy Host");
-                setUIWaitOver();
-            }
-        });
-        while(guiLoading);
-        log.info("GUI Loading Done!");
-        
+        if (needGUI) {
+            log.info("Waiting For GUI Loading...");
+            java.awt.EventQueue.invokeLater(new Runnable() {
+                public void run() {
+                    Main main = new Main(controller);
+                    main.setVisible(true);
+                    main.setTitle("Divvy Host");
+                    setUIWaitOver();
+                }
+            });
+            while(guiLoading);
+            log.info("GUI Loading Done!");
+        } else
+            log.info("GUI Disabled");
+        return true;
     }
     
     public void setUIWaitOver() {
@@ -69,8 +82,21 @@ public class DivvyHost {
      */
     public static void main(String[] args) {
         DivvyHost divvy = new DivvyHost();
-        divvy.start();
+        divvy.checkParameters(Arrays.asList(args));
+        if(!divvy.start())
+            log.severe("Divvy Start Failed!");
         
+    }
+    
+    /**
+     * Use command-line parameters
+     * @param param 
+     */
+    private void checkParameters(List<String> param){
+        if (param.contains("-nogui"))
+            needGUI = false;
+        else 
+            needGUI = true;
     }
     
     /**

@@ -310,9 +310,10 @@ public class DivvyClient implements ClientInterface{
             socket.close();
         } catch (IOException ex) {
             if(printStatus)
-            System.out.println("Exception : "+ex);    
+                System.out.println("Exception : "+ex);    
         }
-        System.out.println();
+        if(printStatus)
+            System.out.println();
         return false;
     }
     

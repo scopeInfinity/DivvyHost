@@ -4,7 +4,9 @@ import divvyhost.utils.Paths;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -56,6 +58,10 @@ public class Configuration {
     public Configuration() {
         Paths paths = new Paths();
         File conf = new File(paths.getConfDir(),CONF_FILENAME);
+        if(!conf.exists()) {
+            log.info("Configuration not Found!");
+            createDefaultConfiguration(conf);
+        }
         isLoadedFine = loadConfiguration(conf);
     }
     
@@ -76,6 +82,7 @@ public class Configuration {
             
         } catch (FileNotFoundException ex) {
             log.severe("Configuration file not found!");
+            
         } catch (Exception ex) {
             log.severe(ex.toString());
         } finally {
@@ -87,6 +94,31 @@ public class Configuration {
             }
         }
         return false;
+    }
+    
+    private void createDefaultConfiguration(File file) {
+        OutputStream os = null;
+        try {
+            os = new FileOutputStream(file);
+            Properties properties = new Properties();
+            properties.put(CONF_INTERAL_IP, "172.16.156.0");
+            properties.put(CONF_PREFIX_LENGTH, String.valueOf(23));
+            properties.save(os, "Divvy Host Configuration" );
+            os.flush();
+            log.info("Default Configuration Created");
+            
+        } catch (FileNotFoundException ex) {
+            log.severe(ex.toString());
+        } catch (IOException ex) {
+            log.severe(ex.toString());
+        } finally {
+            try {
+                if(os!=null)
+                    os.close();
+            } catch (IOException ex) {
+                log.severe(ex.toString());
+            }
+        }
     }
 
     public boolean isLoadedFine() {

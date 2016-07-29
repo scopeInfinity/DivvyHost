@@ -21,6 +21,7 @@ public class Scheduler implements Runnable{
     
     public Scheduler(ProjectManager manager, String user) {
         thread = new Thread(this,"Scheduler");
+        thread.setPriority(Thread.MIN_PRIORITY);
         networkManager = new NetworkManager(manager,user);
     }
     

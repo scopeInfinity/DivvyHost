@@ -18,7 +18,7 @@ public class Configuration {
     private static final Logger log = Logger.getLogger(Paths.class.getName());
     
     public static int PORT_TCP      = 10403;
-    public static int PORT_UCP      = 10404;
+    public static int PORT_FAST      = 10404;
     public static int WEB_PORT      = 9999; 
     
     public static int PORT_SCAN_TIMEOUT = 5000;
@@ -33,6 +33,9 @@ public class Configuration {
     public static int BUFFER_SIZE_CLIENT1 = 10*1024*1024;
     public static int BUFFER_SIZE_CLIENT2 = 10*1024*1024;
     
+    public static boolean fastScanEnabled           = false;
+    public static boolean fastScanServerEnabled     = false;
+    public static String FAST_SCAN_MESSAGE          = "[[DivvyHost]]";
     
     public static String SIGN_ALGO = "DSA";
     public static int SIGN_KEYSIZE  = 1024; 

@@ -3,11 +3,15 @@ package divvyhost.network;
 import com.esotericsoftware.kryonet.Client;
 import com.esotericsoftware.kryonet.rmi.ObjectSpace;
 import divvyhost.configuration.Configuration;
+import static divvyhost.configuration.Configuration.FAST_SCAN_MESSAGE;
+import static divvyhost.configuration.Configuration.fastScanEnabled;
 import divvyhost.project.Details;
 import divvyhost.project.Project;
 import divvyhost.project.ProjectManager;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
@@ -59,6 +63,8 @@ public class DivvyClient implements ClientInterface{
      * @return isFound.
      */
     public boolean scanNetwork() {
+        InetAddress lastScanIP = lastScannedAddress;
+        
         lastScannedAddress = null;
         firstScannedServer = null;
         isLastFreshServer = false;
@@ -86,7 +92,7 @@ public class DivvyClient implements ClientInterface{
 //        }
         
         //Using Configuration File
-       if (checkServerOnSubnet(configuration.getInternalIP(), configuration.getPrefixLength())) {
+       if (checkServerOnSubnet(configuration.getInternalIP(), configuration.getPrefixLength(), lastScanIP)) {
            log.info("Server Found");
        }           
         if(firstScannedServer == null) {
@@ -121,10 +127,10 @@ public class DivvyClient implements ClientInterface{
         firstScannedServer = null;
     }
     /**
-     * Connect if last find Server
+     * Connect if last find Server, Returns null if Server is mine
      * @return isConnected
      */
-    public boolean connect() {
+    public Boolean connect() {
         if(lastScannedAddress == null) {
             log.severe("No Scanned Host");
             return false;
@@ -135,21 +141,25 @@ public class DivvyClient implements ClientInterface{
             }
             
             client.start();
-            client.connect(Configuration.CLIENT_CONNECT_TIMEOUT, lastScannedAddress, Configuration.PORT_TCP, Configuration.PORT_UCP);
+            client.connect(Configuration.CLIENT_CONNECT_TIMEOUT, lastScannedAddress, Configuration.PORT_TCP);
 
                 //Verifing Other Server
                 try{
                     if(divvyServer.isDivvyServer()) {
                         String otherUser = divvyServer.getUser();
+                        log.info("Server["+lastScannedAddress+"] ServerUser ("+otherUser + "), Me ("+user+")");
                         if (otherUser!=null && !otherUser.equals(user)) {
                             return true;
+                        } else {
+                            log.info("Ignored due to Server User");
+                            return null;
                         }
                     }
                 }catch(Exception e) {
                     log.severe("Invalid Client");
                 }
 
-                return true;
+                return false;
         } catch (Exception ex) {
                 log.severe(ex.toString());
         }
@@ -210,7 +220,7 @@ public class DivvyClient implements ClientInterface{
      * @param prefixLength
      * @return isServerFound
      */
-    private boolean checkServerOnSubnet(InetAddress inetAddress, int prefixLength) {
+    private boolean checkServerOnSubnet(InetAddress inetAddress, int prefixLength, InetAddress lastScanIP) {
         if (inetAddress.getAddress().length!=4) {
             // Only for IPv4
             return false;
@@ -224,8 +234,8 @@ public class DivvyClient implements ClientInterface{
         suffixMask0 = Math.min(suffixMask0, 8);
         
         int lastByteMin = address[3], lastByteMax = address[3];
-        lastByteMin = lastByteMin&~((1<<suffixMask0)-1);
-        lastByteMax = lastByteMax|(1<<suffixMask0);
+        lastByteMin = lastByteMin&~((1<<suffixMask0) - 1);
+        lastByteMax = lastByteMax|((1<<suffixMask0) - 1);
         
 //        //Not Sure
 //        if (lastByteMin == 0)
@@ -233,17 +243,30 @@ public class DivvyClient implements ClientInterface{
 //        if (lastByteMax == 255)
 //            lastByteMax = 254;
         
-        for (int lastByte = lastByteMin; lastByte < lastByteMax; lastByte++) {
-            address[3] = (byte) lastByte;
-            try {
-                if (checkForServer(InetAddress.getByAddress(address))) {
-                    return true;
-                }
-            } catch (UnknownHostException ex) {
-                
-            }
+        int lastByteStart = lastByteMin;
+        if (lastScanIP!=null) {
+            lastByteStart = (lastScanIP.getAddress()[3]+1)%256;
         }
-        return false;
+        
+        log.info("Going to Scan "+(lastByteMax-lastByteMin+1)+" Nodes");
+        try{
+            if(lastByteMax>=lastByteMin)
+            for (int lastByteCounter = 0; lastByteCounter < lastByteMax-lastByteMin+1; lastByteCounter++) {
+                int lastByte = lastByteMin+((lastByteStart-lastByteMin)+lastByteCounter)%(lastByteMax-lastByteMin+1);
+                address[3] = (byte) lastByte;
+                try {
+                    if (checkForServer(InetAddress.getByAddress(address))) {
+                        return true;
+                    }
+                } catch (UnknownHostException ex) {
+
+                }
+            }
+            return false;
+        }
+        finally{
+            log.info("Scan Completed!");
+        }
     }
     
     /**
@@ -252,22 +275,44 @@ public class DivvyClient implements ClientInterface{
      * @return isRunning
      */
     private boolean checkForServer(InetAddress address) {
+        boolean printStatus = false;
+        if(printStatus)
+            System.out.print("Checking "+address+" ");
         
         // Timeout for Checking 20ms
         try {
-            if (!address.isReachable(20))
-            return false;
-            
-            Socket socket = new Socket(address, Configuration.PORT_TCP);
+            Socket socket = new Socket();
+            socket.connect(new InetSocketAddress(address, Configuration.PORT_FAST), 100);
+            boolean working = false;
             if(socket.isConnected()) {
+                if (fastScanEnabled) {
+                    BufferedInputStream bis = new BufferedInputStream(socket.getInputStream());
+                    byte[] input = new byte[FAST_SCAN_MESSAGE.getBytes().length];
+
+                    int len = bis.read(input);
+                    if(len == FAST_SCAN_MESSAGE.getBytes().length) {
+                        if(new String(input).equals(FAST_SCAN_MESSAGE)) {
+                            System.out.print("> "+new String(input)+"< ");
+                            working = true;
+                        }
+                    }
+                } else
+                    working = true;
                 socket.close();
-                if (addWorkingServer(address))
+                if(working)
+                    System.out.println(" FAST_PORT ");
+                if (working && addWorkingServer(address)) {
+                    if(printStatus)
+                        System.out.println("Working");
                     return true;
+                }
             }
             socket.close();
         } catch (IOException ex) {
-            
+            if(printStatus)
+            System.out.println("Exception : "+ex);    
         }
+        System.out.println();
         return false;
     }
     
@@ -279,12 +324,14 @@ public class DivvyClient implements ClientInterface{
      * @return isNotSkipped
      */
     private boolean addWorkingServer(InetAddress address) {
+        log.info("Server "+address+" Found");
         if (firstScannedServer == null)
             firstScannedServer = address;
         
         if(!serverDone.contains(address)) {
             lastScannedAddress = address;
             isLastFreshServer = true;
+            serverDone.add(address);
             return true;
         }
         return false;

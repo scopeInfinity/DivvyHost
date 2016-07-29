@@ -4,10 +4,15 @@ import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Server;
 import com.esotericsoftware.kryonet.rmi.ObjectSpace;
 import divvyhost.configuration.Configuration;
+import static divvyhost.configuration.Configuration.FAST_SCAN_MESSAGE;
+import static divvyhost.configuration.Configuration.fastScanServerEnabled;
 import divvyhost.project.Details;
 import divvyhost.project.Project;
 import divvyhost.project.ProjectManager;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -23,6 +28,10 @@ public class DivvyServer {
     private ServerConnection connection;
     private Server server;
     private String user;
+    
+    private ServerSocket fastSocket;
+    private Thread fastThread;
+    private boolean isFastThreadRunning;
     
     private ProjectManager projectManager; 
     
@@ -40,18 +49,48 @@ public class DivvyServer {
             
         };
         NetworkRegister.register(server);
-        
+                
     }
     
     public boolean start() {
         try {
-            server.bind(Configuration.PORT_TCP, Configuration.PORT_UCP);
+            server.bind(Configuration.PORT_TCP);
+            fastSocket = new ServerSocket(Configuration.PORT_FAST);
             server.start();
+            if(fastScanServerEnabled)
+                fastSockerReply();
             return true;
         } catch (IOException ex) {
             log.severe(ex.toString());
         }
         return false;
+    }
+    
+    private void fastSockerReply() {
+        isFastThreadRunning = false;
+        
+        fastThread = new Thread("Fast Thread"){
+
+            @Override
+            public void run() {
+                isFastThreadRunning = true;
+                while(isFastThreadRunning) {
+                    try {
+                        Socket socket = fastSocket.accept();
+                        BufferedOutputStream bos = new BufferedOutputStream(socket.getOutputStream());
+                        bos.write(FAST_SCAN_MESSAGE.getBytes());
+                        bos.flush();
+                        bos.close();
+                    } catch (IOException ex) {
+                        log.severe("Fast Connect Attempt Failed : "+ex.toString());
+                    }
+                }
+            }
+            
+        };
+        
+        fastThread.start();
+        
     }
     
     private class ServerConnection extends Connection implements ServerInterface {

@@ -16,6 +16,8 @@ public class NetworkManager {
     private ProjectManager projectManager; 
     private String user;
     
+    private int internalScanCounter;
+    
     public NetworkManager(ProjectManager projectManager, String user) {
         this.projectManager = projectManager;
         this.user = user;
@@ -23,37 +25,39 @@ public class NetworkManager {
         if (!divvyServer.start()) {
             log.severe("SERVER CANNOT BE STARTED!!!!!!!!!");
         }
+        internalScanCounter = 0;
     }
-    static int counter = 0;
     /**
      * Start Syncing Current Project with others
      * Currently Checking all Possible Server in One Go
      */
     void startSync() {
         DivvyClient divvyClient = new DivvyClient(projectManager, user);
+        internalScanCounter = 0;
         while(true) {
             if (!divvyClient.scanNetwork()) {
                 log.info("No other Server Found on Network");
-                continue;
+                break;
             }
             
             log.info("Last Server freshOne : "+divvyClient.isLastFreshServer());
             if (!divvyClient.isLastFreshServer()) {
                 divvyClient.makeServerHistoryClear();
-                return;
+                break;
             }
-            
-            if (!divvyClient.connect()) {
+            //Boolean, null value if ignored
+            Boolean status = divvyClient.connect();
+            if (status!=null && !status) {
                 log.severe("Unable to connect to client");
                 continue;
             }
-            else {
+            else if(status!=null){
                 divvyClient.sync();
             }
             divvyClient.disconnect();
             try {
                 Thread.sleep(100);
-                System.out.println("Sleep Server"+ ++counter);
+                log.info("Sleep Server"+ ++internalScanCounter);
                 System.out.flush();
                 System.gc();
             } catch (Exception ex) {

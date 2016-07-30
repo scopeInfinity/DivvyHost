@@ -299,7 +299,7 @@ public class DivvyClient implements ClientInterface{
                 } else
                     working = true;
                 socket.close();
-                if(working)
+                if(printStatus && working)
                     System.out.println(" FAST_PORT ");
                 if (working && addWorkingServer(address)) {
                     if(printStatus)

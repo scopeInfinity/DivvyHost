@@ -1,6 +1,7 @@
 package divvyhost.project;
 
 import static divvyhost.configuration.Configuration.AUTO_EXPORTPROJECT_ONLOAD;
+import divvyhost.host.Host;
 import divvyhost.utils.Paths;
 import java.io.File;
 import java.util.ArrayList;
@@ -19,6 +20,8 @@ public class ProjectManager {
  
     //pID, Project
     private HashMap<UUID, Project> availableProjects;
+    
+    private Host hoster;
     
     /**
      * Load All Projects from Directory
@@ -101,5 +104,17 @@ public class ProjectManager {
             }
         }
         return newList;
+    }
+
+    /**
+     * Set Hoster, for triggering Host Page Refresh
+     * @param aThis 
+     */
+    public void setHoster(Host aThis) {
+        this.hoster = aThis;
+    }
+    
+    public void updateHostPage() {
+        hoster.createMainPage();
     }
 }

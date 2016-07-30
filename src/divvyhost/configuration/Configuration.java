@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  * @author scopeinfinity
  */
 public class Configuration {
-    private static final Logger log = Logger.getLogger(Paths.class.getName());
+    private static final Logger log = Logger.getLogger(Configuration.class.getName());
     
     public static int PORT_TCP      = 10403;
     public static int PORT_FAST      = 10404;

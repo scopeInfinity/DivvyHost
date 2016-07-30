@@ -3,6 +3,7 @@ package divvyhost;
 import divvyhost.GUI.Controller;
 import divvyhost.GUI.Main;
 import divvyhost.configuration.Configuration;
+import divvyhost.host.Host;
 import divvyhost.network.Scheduler;
 import divvyhost.project.Data;
 import divvyhost.project.Details;
@@ -33,7 +34,7 @@ public class DivvyHost {
     private Controller controller;
     private ProjectManager projectManager;
     private Scheduler scheduler;
-    
+    private Host hoster;
     private boolean guiLoading;
     
     private boolean needGUI;
@@ -44,6 +45,7 @@ public class DivvyHost {
         controller = new Controller(this);
         projectManager = new ProjectManager();
         scheduler = new Scheduler(projectManager, user.getUser());
+        hoster = new Host(projectManager);
         log.info("Divvy Host Created!");
     }
     
@@ -66,10 +68,10 @@ public class DivvyHost {
                     setUIWaitOver();
                 }
             });
-            while(guiLoading);
-            log.info("GUI Loading Done!");
         } else
             log.info("GUI Disabled");
+        
+        hoster.start();
         return true;
     }
     

@@ -68,6 +68,7 @@ public class Controller {
                else
                {
                    if (project.save()) {
+                       host.getProjectManager().updateHostPage();
                        return "Pulled Successfull";
                    } else {
                        return "Error in Saving After Pulling";
@@ -93,8 +94,10 @@ public class Controller {
         if (project!=null) {
                if(!project.exportProject()) 
                    return "Export Failed";
-               else
+               else {
+                   host.getProjectManager().updateHostPage();
                    return "Exported Successfully!";
+               }
         } else {
             return "Project not Found!";
         }

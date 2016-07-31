@@ -5,10 +5,11 @@ Decentralized Hosting : Fully P2P Hosting
 
 ## Dependencies
 
-  * Java 1.7+
+  * Java 1.7 or higher
   
-  * Ant (Compiling)
-  
+  * Ant 1.8.0 or higher (Compiling)
+
+  * Python 2 (Hosting)  
 
 ## Compile
     cd /path/to/DivvyHost/
@@ -26,10 +27,38 @@ Decentralized Hosting : Fully P2P Hosting
     java -jar DivvyHost.jar
     
   
-  Without GUI
+  __Without GUI__
   
     cd /path/to/DivvyDistribution/
     java -jar DivvyHost.jar -nogui
+
+  __Using Bash Script__
+
+   Service Options are for controlling program in background
+   
+   Default Logs Path `/tmp/divvy.log`
+
+     Usage: bin.sh <option> [DivvyHost.jar]
+       
+     Options:
+      -help    Help
+      -run   Run With GUI
+      -nogui   Run Without GUI
+      -test    Check Any Running Instance
+      -show    Show GUI
+      -hide    Hide GUI
+
+    Service Options:
+     start    Start DivvyHost
+     stop   Stop DivvyHost
+     reload   Reload DivvyHost
+  
+  Example
+  
+    cd /path/to/DivvyDistribution/
+    bash bin.sh -run
+
+
   
     
   

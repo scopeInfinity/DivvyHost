@@ -57,6 +57,7 @@ public class DivvyHost {
         }
         
         projectManager.loadAllProjects();
+        hoster.createMainPage();
         scheduler.start();
         if (needGUI) {
             log.info("Waiting For GUI Loading...");

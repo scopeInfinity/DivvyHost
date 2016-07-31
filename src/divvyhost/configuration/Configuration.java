@@ -20,7 +20,8 @@ public class Configuration {
     private static final Logger log = Logger.getLogger(Configuration.class.getName());
     
     public static int PORT_TCP      = 10403;
-    public static int PORT_FAST      = 10404;
+    public static int PORT_FAST     = 10404;
+    public static int PORT_SERVICE  = 10405;
     public static int WEB_PORT      = 9999; 
     
     public static int PORT_SCAN_TIMEOUT = 5000;

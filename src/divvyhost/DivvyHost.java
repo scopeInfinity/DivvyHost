@@ -9,6 +9,7 @@ import divvyhost.project.Data;
 import divvyhost.project.Details;
 import divvyhost.project.Project;
 import divvyhost.project.ProjectManager;
+import divvyhost.service.Service;
 import divvyhost.users.User;
 import divvyhost.utils.Base64;
 import divvyhost.utils.Pair;
@@ -29,23 +30,24 @@ import javax.swing.SwingUtilities;
 public class DivvyHost {
     private static final Logger log = Logger.getLogger(DivvyHost.class.getName());
 
+    private static Service service;
     private static User user;
-    private Main gui;
+    
     private Controller controller;
     private ProjectManager projectManager;
     private Scheduler scheduler;
     private Host hoster;
-    private boolean guiLoading;
     
     private boolean needGUI;
+    private Main mainGUI;
 
     public DivvyHost() {
         user = User.loadUser();
-        guiLoading = true;
         controller = new Controller(this);
         projectManager = new ProjectManager();
         scheduler = new Scheduler(projectManager, user.getUser());
         hoster = new Host(projectManager);
+        service.setDivvyHost(this);
         log.info("Divvy Host Created!");
     }
     
@@ -55,20 +57,12 @@ public class DivvyHost {
             log.severe("Unable to load Configurations");
             return false;
         }
-        
         projectManager.loadAllProjects();
         hoster.createMainPage();
         scheduler.start();
         if (needGUI) {
-            log.info("Waiting For GUI Loading...");
-            java.awt.EventQueue.invokeLater(new Runnable() {
-                public void run() {
-                    Main main = new Main(controller);
-                    main.setVisible(true);
-                    main.setTitle("Divvy Host");
-                    setUIWaitOver();
-                }
-            });
+            log.info("Tring For GUI Creation...");
+            createGUI();
         } else
             log.info("GUI Disabled");
         
@@ -76,16 +70,16 @@ public class DivvyHost {
         return true;
     }
     
-    public void setUIWaitOver() {
-        guiLoading = false;
-        log.info("UI Loading Complete");
-    }
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
+        service = new Service();
+        
         DivvyHost divvy = new DivvyHost();
-        divvy.checkParameters(Arrays.asList(args));
+        if(!divvy.checkParameters(Arrays.asList(args)))
+            return;
+        
         if(!divvy.start())
             log.severe("Divvy Start Failed!");
         
@@ -94,12 +88,24 @@ public class DivvyHost {
     /**
      * Use command-line parameters
      * @param param 
+     * @return needToContinue
      */
-    private void checkParameters(List<String> param){
-        if (param.contains("-nogui"))
+    private boolean checkParameters(List<String> params){
+        String serviceFlag = null;
+        for (String param : params) {
+            if(param.startsWith("-service="))
+                serviceFlag = param.substring("-service=".length());
+        }
+        if(!service.start(serviceFlag)) { 
+            log.info("Quitting");
+            return false;
+        }
+            
+        if (params.contains("-nogui"))
             needGUI = false;
         else 
             needGUI = true;
+        return true;
     }
     
     /**
@@ -168,4 +174,52 @@ public class DivvyHost {
         return user;
     }
        
+    
+    private void createGUI() {
+        if(mainGUI!=null) {
+            log.severe("GUI Already There");
+            return;
+        }
+        
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                mainGUI = new Main(controller);
+                mainGUI.setVisible(true);
+                mainGUI.setTitle("Divvy Host");
+                log.info("GUI Loading Done");
+            }
+        });
+        
+    }
+    /**
+     * Callback from Service
+     * @return status
+     */
+    public String startGUI() {
+        if(mainGUI!=null)
+            return "GUI Already Exists";
+        else
+        {
+            createGUI();
+            return "GUI Start Called";
+        }
+                    
+    }
+    
+    /**
+     * Callback from Service
+     * @return status
+     */
+    public String stopGUI() {
+        if(mainGUI == null)
+            return "GUI No Present";
+        else
+        {
+            mainGUI.setVisible(false);
+            mainGUI = null;
+            System.gc();
+            return "GUI Stop Called";
+        }
+    }
+    
  }

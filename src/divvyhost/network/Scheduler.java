@@ -17,12 +17,14 @@ public class Scheduler implements Runnable{
     private Thread thread;
     private NetworkManager networkManager;
     
+    private ProjectManager projectManager;
+    private String user;
+    
     private boolean syncInProcess;
     
     public Scheduler(ProjectManager manager, String user) {
         thread = new Thread(this,"Scheduler");
         thread.setPriority(Thread.MIN_PRIORITY);
-        networkManager = new NetworkManager(manager,user);
     }
     
     private void periodicEvent() {
@@ -42,6 +44,7 @@ public class Scheduler implements Runnable{
     }
     
     public void start() {
+        networkManager = new NetworkManager(projectManager,user);
         thread.start();
         syncInProcess = false;
     }

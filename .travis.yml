@@ -1,11 +1,10 @@
 language: java
-install: ant test
+install: ant jar
 script:
   - cd dist
   - bash bin.sh -test
 os:
   - linux
-  - osx
 jdk:
   - oraclejdk8
   - oraclejdk7

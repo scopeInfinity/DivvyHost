@@ -1,5 +1,6 @@
 package divvyhost.project;
 
+import divvyhost.DivvyHost;
 import divvyhost.users.User;
 import java.io.File;
 import java.io.FileInputStream;
@@ -222,11 +223,25 @@ public class Project implements Serializable{
     
     /**
      * Save Project, details + WholeData + publicKey
+     * Check if Space is Available
      * @return isSaved
      */
     public boolean save() {
         File dirSave = (new Paths()).getProjectsDir();
         File file = new File(dirSave, details.getFileName());
+        long ignoreSize = 0;
+        if (file.exists())
+            ignoreSize = file.length();
+        
+        if (!DivvyHost.canSaveMoreProject(ignoreSize)) {
+            if(isCurrentUserOwner()) {
+                log.severe(" MEMORY EXCEEDING, Project of Current User only! Saving...");
+                return true;
+            }
+            log.severe(">>>MEMORY EXCEEDING, Not Saving The Project");
+            return false;
+        }
+        
         try {
             FileOutputStream fos = new FileOutputStream(file);
             ObjectOutputStream oos = new ObjectOutputStream(fos);

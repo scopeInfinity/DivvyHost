@@ -31,10 +31,10 @@ public class Configuration {
     
     public static boolean AUTO_EXPORTPROJECT_ONLOAD = false;
     
-    public static int BUFFER_SIZE_SERVER1 = 10*1024*1024;
-    public static int BUFFER_SIZE_SERVER2 = 10*1024*1024;
-    public static int BUFFER_SIZE_CLIENT1 = 10*1024*1024;
-    public static int BUFFER_SIZE_CLIENT2 = 10*1024*1024;
+    public static int BUFFER_SIZE_SERVER1 = 20*1024*1024;
+    public static int BUFFER_SIZE_SERVER2 = 20*1024*1024;
+    public static int BUFFER_SIZE_CLIENT1 = 20*1024*1024;
+    public static int BUFFER_SIZE_CLIENT2 = 20*1024*1024;
     
     public static boolean fastScanEnabled           = false;
     public static boolean fastScanServerEnabled     = false;
@@ -47,11 +47,15 @@ public class Configuration {
     
     private static final String CONF_INTERAL_IP = "INTERNAL_IP";
     private static final String CONF_PREFIX_LENGTH = "PREFIX_LENGTH";
+    private static final String CONF_MAX_SIZE_DISK = "MAX_SIZE_ON_DISK_MB";
     
     private boolean isLoadedFine;
     
     private int prefixLength;
     private InetAddress internalIP;
+    
+    public static int MAX_PROJECT_ALLOWED_SIZE = 10*1024*1024;
+    private int maxSizeAllowedOnDisk;
     
     /**
      * Load Configuration from File
@@ -76,8 +80,24 @@ public class Configuration {
             fis = new FileInputStream(file);
             Properties properties = new Properties();
             properties.load(fis);
-            internalIP = InetAddress.getByName(properties.getProperty(CONF_INTERAL_IP));
-            prefixLength = Integer.parseInt(properties.getProperty(CONF_PREFIX_LENGTH));
+            internalIP = InetAddress.getByName("127.0.0.1");
+            prefixLength = 31;
+            maxSizeAllowedOnDisk = 200;
+            try{
+                internalIP = InetAddress.getByName(properties.getProperty(CONF_INTERAL_IP));
+            }catch(Exception e){
+                log.severe("Ignored "+CONF_INTERAL_IP);
+            }
+            try{
+                prefixLength = Integer.parseInt(properties.getProperty(CONF_PREFIX_LENGTH));
+            }catch(Exception e){
+                log.severe("Ignored "+CONF_PREFIX_LENGTH);
+            }
+            try{
+                maxSizeAllowedOnDisk = Integer.parseInt(properties.getProperty(CONF_MAX_SIZE_DISK));
+            }catch(Exception e){
+                log.severe("Ignored "+CONF_MAX_SIZE_DISK);
+            }
             fis.close();
             return true;
             
@@ -104,6 +124,7 @@ public class Configuration {
             Properties properties = new Properties();
             properties.put(CONF_INTERAL_IP, "172.16.156.0");
             properties.put(CONF_PREFIX_LENGTH, String.valueOf(23));
+            properties.put(CONF_MAX_SIZE_DISK, String.valueOf(200));
             properties.save(os, "Divvy Host Configuration" );
             os.flush();
             log.info("Default Configuration Created");
@@ -126,6 +147,7 @@ public class Configuration {
         if(isLoadedFine) {
             log.info(CONF_INTERAL_IP + " = " + internalIP );
             log.info(CONF_PREFIX_LENGTH + " = " + prefixLength );
+            log.info(CONF_MAX_SIZE_DISK + " = " + maxSizeAllowedOnDisk + "MB" );
         }
         return isLoadedFine;
     }
@@ -138,4 +160,7 @@ public class Configuration {
         return prefixLength;
     }
 
+    public long getMaxSizeAllowedOnDisk() {
+        return maxSizeAllowedOnDisk*1024L*1024;
+    }
 }

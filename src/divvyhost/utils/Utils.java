@@ -284,6 +284,22 @@ public class Utils {
         }
     }
     
+    /**
+     * Sum Size of Files just Inside Directory
+     * @param dir
+     * @return size
+     */
+    public static long sizeOfFilesInDirectory(File dir) {
+        File[] files = dir.listFiles();
+        long sum = 0;
+        for (File file : files) {
+            if(file.isFile()) {
+                sum+=file.length();
+            }
+        }
+        return sum;
+    }
+    
     
     
 }

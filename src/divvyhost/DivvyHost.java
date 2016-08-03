@@ -15,6 +15,7 @@ import divvyhost.utils.Base64;
 import divvyhost.utils.Pair;
 import divvyhost.utils.Paths;
 import divvyhost.utils.Utils;
+import java.io.File;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Arrays;
@@ -222,4 +223,21 @@ public class DivvyHost {
         }
     }
     
+    /**
+     * Check size of Project Directory
+     * @param ignoreSize 
+     * @return canSaveMore
+     */
+    public static boolean canSaveMoreProject(long ignoreSize) {
+        File dir = (new Paths()).getProjectsDir();
+        long sizeOfDir = Utils.sizeOfFilesInDirectory(dir);
+        Configuration conf = new Configuration();
+        log.info("Project Directory Size : "+sizeOfDir
+                + " Ignoring : "+ignoreSize
+                + " Max Allowed :"+conf.getMaxSizeAllowedOnDisk());
+        if (sizeOfDir-ignoreSize < conf.getMaxSizeAllowedOnDisk())
+            return true;
+        log.severe("|   Can't Save Any More Project  |");
+        return false;
+    }
  }

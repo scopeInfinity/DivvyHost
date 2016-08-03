@@ -102,4 +102,22 @@ public class Controller {
             return "Project not Found!";
         }
     }
+    
+    /**
+     * Blocks a User
+     * @param user
+     * @return Status
+     */
+    public String blockUser(String user) {
+        return host.getProjectManager().addBlockUser(user);
+    }
+    
+    /**
+     * Block a Project
+     * @param pID
+     * @return Status
+     */
+    public String blockProject(String pID) {
+        return host.getProjectManager().addBlockProject(pID);
+    }
 }

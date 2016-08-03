@@ -23,6 +23,8 @@ public class Scheduler implements Runnable{
     private boolean syncInProcess;
     
     public Scheduler(ProjectManager manager, String user) {
+        this.user = user;
+        this.projectManager = manager;
         thread = new Thread(this,"Scheduler");
         thread.setPriority(Thread.MIN_PRIORITY);
     }

@@ -54,7 +54,7 @@ public class NetworkRegister {
         // UUID is not Serializable
         // Thus no Member containing UUID should not be passed using kryonet
         kryo.register(UUID.class);
-        
+    
         
     }
     

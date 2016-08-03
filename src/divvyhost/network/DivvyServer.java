@@ -38,6 +38,7 @@ public class DivvyServer {
     public DivvyServer(ProjectManager projectManager, String user) {
         this.projectManager = projectManager;
         this.user = user;
+        log.info("Server Started for User :"+user);
         
         server = new Server(Configuration.BUFFER_SIZE_SERVER1, Configuration.BUFFER_SIZE_SERVER2){
 
@@ -102,12 +103,20 @@ public class DivvyServer {
         @Override
         public List<Details> listDetails() {
             log.info("Client Requesting List of Projects");
+            if(projectManager == null) {
+                log.severe("Project Manager NULL");
+                return null;
+            }
             return projectManager.listDetails();
         }
 
         @Override
         public Project getProject(String uuid) {
             log.info("Client Requesting Project "+uuid);
+            if(projectManager == null) {
+                log.severe("Project Manager NULL");
+                return null;
+            }
             return projectManager.getProject(uuid);
         }
 

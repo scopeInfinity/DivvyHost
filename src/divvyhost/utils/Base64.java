@@ -32,7 +32,8 @@ public class Base64 {
      * @return text
      */
     public static String decode(String base64) {
-        return decode(base64.getBytes());
+        return new String(DatatypeConverter.parseBase64Binary(base64));
+        
     }
     
     /**
@@ -41,7 +42,7 @@ public class Base64 {
      * @return text
      */
     public static String decode(byte[] base64) {
-        return DatatypeConverter.printBase64Binary(base64);
+        return decode(new String(base64));
     }
     
 }

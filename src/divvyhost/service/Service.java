@@ -23,7 +23,11 @@ public class Service {
     }
     
     public boolean start(String flag) {
-        if(client.connect())
+        boolean runIgnoreOther = false;
+        if(flag!=null && flag.equals("ignore_other"))
+                runIgnoreOther = true;
+        boolean isOtherHosting = false;
+        if(!runIgnoreOther && (isOtherHosting=client.connect()))
         {
             log.info("Another DivvyHost Instance is Running");
             if(flag!=null) {
@@ -42,7 +46,7 @@ public class Service {
         {
             log.info("DivvyHost Main Is going to Run");
             if(flag!=null && flag.equals("test")){
-                log.info("Test : No Another DivvyHost Instance is Running");
+                log.info("Test : No Another DivvyHost Instance is Running"+(isOtherHosting?"[Ignored]":""));
                 return false;
             } else if(flag!=null)
                 log.severe("DivvyHost Main Instance, Service Flag Not Supported");

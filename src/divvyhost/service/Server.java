@@ -95,6 +95,8 @@ public class Server {
      * @return reply
      */
     private String getReply(String message) {
+        if (message == null)
+            return "NULL";
         if(message.equals(Service.MESSAGE_START_GUI))
             return startGUI();
         else if(message.equals(Service.MESSAGE_STOP_GUI))

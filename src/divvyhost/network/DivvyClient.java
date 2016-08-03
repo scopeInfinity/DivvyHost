@@ -197,6 +197,10 @@ public class DivvyClient implements ClientInterface{
                 log.severe("Server["+lastScannedAddress.getHostAddress()+"] Project Failed to Fetch :"+projectDetails.getpID() );
                 continue;
             }
+            if (!projectManager.canAddThisProject(newProject)) {
+                log.severe("Server["+lastScannedAddress.getHostAddress()+"] Project, Can't Add this Project :"+projectDetails.getpID() );
+                continue;
+            }
             if (!newProject.completeValidation()) {
                 log.severe("Server["+lastScannedAddress.getHostAddress()+"] Project Validation Failed :"+projectDetails.getpID() );
                 continue;

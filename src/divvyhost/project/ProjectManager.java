@@ -45,31 +45,19 @@ public class ProjectManager {
     public ProjectManager() {
         path = new Paths();
         File blockProjectFile = new File(path.getConfDir(),BLOCK_PROJECT_FILENAME );
-        blockedProjects = loadUniqueRows(blockProjectFile, new Callback<String, Boolean>() {
-
-            @Override
-            public Boolean call(String pid) {
-                return isValidProjectID(pid);
-            }
-        }, "Project");
+        blockedProjects = loadUniqueRowsBlockedProject(blockProjectFile, "Project");
         File blockUserFile = new File(path.getConfDir(),BLOCK_USER_FILENAME );
-        blockedUsers = loadUniqueRows(blockUserFile,new Callback<String, Boolean>() {
-
-            @Override
-            public Boolean call(String user) {
-                return isValidUser(user);
-            }
-        }, "User");
+        blockedUsers = loadUniqueRowsBlockedUser(blockUserFile, "User");
     }
     
     /**
-     * Read Lines of String and create a HashSet
+     * Read Lines of String and create a HashSet, BlockedUser
      * @param file
      * @param checkValid
      * @param blockedWhat
      * @return set
      */
-    private Set<String> loadUniqueRows(File file, Callback<String, Boolean> checkValid, String blockedWhat ){
+    private Set<String> loadUniqueRowsBlockedUser(File file, String blockedWhat ){
         HashSet<String> data = new HashSet<>();
         try {
             BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
@@ -77,7 +65,39 @@ public class ProjectManager {
             while((line = br.readLine())!=null) {
                 line = line.trim();
                 if(!line.isEmpty()) {
-                    if(checkValid.call(line)) {
+                    if( isValidUser(line) ) {
+                        log.info("Blocked "+blockedWhat+" "+line);
+                        data.add(line);
+                    }
+                }
+            }
+            log.info("File loaded : "+file);
+            return data;
+        } catch (FileNotFoundException ex) {
+            log.info("No File "+file);
+        } catch (IOException ex) {
+            log.severe(ex.toString());
+        }
+        log.severe("Error in Reading");
+        return data;
+    }
+    
+    /**
+     * Read Lines of String and create a HashSet, BlockedProject
+     * @param file
+     * @param checkValid
+     * @param blockedWhat
+     * @return set
+     */
+    private Set<String> loadUniqueRowsBlockedProject(File file, String blockedWhat ){
+        HashSet<String> data = new HashSet<>();
+        try {
+            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+            String line = null;
+            while((line = br.readLine())!=null) {
+                line = line.trim();
+                if(!line.isEmpty()) {
+                    if( isValidProjectID(line) ) {
                         log.info("Blocked "+blockedWhat+" "+line);
                         data.add(line);
                     }

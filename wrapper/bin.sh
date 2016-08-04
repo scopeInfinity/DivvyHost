@@ -34,6 +34,9 @@ function createAutoStart {
 	chmod +x filenameinit || exit 1;
 
 	filename=~/.config/autostart/Divvy.desktop;
+	
+	mkdir ~/.config;
+	mkdir ~/.config/autostart;
 
 	echo '[Desktop Entry]' > $filename;
 	echo 'Type=Application' >> $filename;

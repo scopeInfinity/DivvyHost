@@ -2,6 +2,8 @@ language: java
 install: ant jar
 script:
   - cd dist
+  - bash bin.sh install
+  - cd ~/Divvy/
   - bash bin.sh -test
 os:
   - linux

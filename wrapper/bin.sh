@@ -22,6 +22,31 @@ function init {
 # Check, if Everything is Alright
 init;
 
+function createAutoStart {
+	
+	filenameinit=$HOME/Divvy/init.sh;
+
+	echo '#!/bin/bash' > filenameinit;
+	echo 'pushd $1' >> filenameinit;
+	echo 'bash bin.sh start' >> filenameinit;
+	echo 'popd' >> filenameinit;
+
+	chmod +x filenameinit || exit 1;
+
+	filename=~/.config/autostart/Divvy.desktop;
+
+	echo '[Desktop Entry]' > $filename;
+	echo 'Type=Application' >> $filename;
+	echo "Exec=$HOME/Divvy/init.sh $HOME/Divvy/" >> $filename;
+	echo 'X-GNOME-Autostart-enabled=true' >> $filename;
+	echo 'NoDisplay=false' >> $filename;
+	echo 'Hidden=false' >> $filename;
+	echo 'Name[en_IN]=Divvy' >> $filename;
+	echo 'Comment[en_IN]=Divvy Host' >> $filename;
+	echo 'X-GNOME-Autostart-Delay=0' >> $filename;
+
+}
+
 # Print Usage
 function _help {
 	echo "Usage: bin.sh <option> [DivvyHost.jar]"
@@ -80,6 +105,9 @@ function install {
 	parent_dir="$(dirname "$JAR_FILE")"
 	cp -r "lib/" "$HOME/Divvy/"
 	cp "$JAR_FILE" "$HOME/Divvy/DivvyHost.jar"
+
+	createAutoStart;
+
 	exit 0
 }
 
@@ -116,7 +144,7 @@ else
 		"stop" )
 			stop;
 			;;
-		"reload" )
+		"restart" )
 			stop;
 			start;
 			;;

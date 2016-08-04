@@ -3,6 +3,25 @@ JAR_FILE="$(pwd)/DivvyHost.jar"
 LOG_FILE='/tmp/divvy.log'
 PID_FILE='/tmp/divvy.pid'
 
+
+function init {
+	if ! type java &> /dev/null 
+	then
+		echo '`java` not found!';
+		echo 'Make Sure `java` is Included in your $PATH';
+		echo ;
+		echo 'If java not Installed, then try';
+		echo 'sudo apt-get install openjdk-8-jre';
+		echo ;
+		exit;
+	fi;
+
+	# Linux Destro, Assuming Python will be installed
+}
+
+# Check, if Everything is Alright
+init;
+
 # Print Usage
 function _help {
 	echo "Usage: bin.sh <option> [DivvyHost.jar]"

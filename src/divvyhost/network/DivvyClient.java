@@ -8,6 +8,7 @@ import static divvyhost.configuration.Configuration.fastScanEnabled;
 import divvyhost.project.Details;
 import divvyhost.project.Project;
 import divvyhost.project.ProjectManager;
+import divvyhost.utils.Utils;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -42,13 +43,17 @@ public class DivvyClient implements ClientInterface{
     private String user;
     
     private Set<InetAddress> serverDone;
-    
+    private int lastScannedIPListIndex;
+    private int lastScannedIPSuffix;
+            
     public DivvyClient(ProjectManager projectManager, String user) {
         this.projectManager = projectManager;
         this.user = user;
         serverDone = new HashSet<InetAddress>();
         configuration = new Configuration();
         initClient();        
+        lastScannedIPListIndex = 0;
+        lastScannedIPSuffix = -1;
             
     }
     
@@ -92,7 +97,7 @@ public class DivvyClient implements ClientInterface{
 //        }
         
         //Using Configuration File
-       if (checkServerOnSubnet(configuration.getInternalIP(), configuration.getPrefixLength(), lastScanIP)) {
+       if (checkServerOnSubnet(configuration.getInternalIPs(), configuration.getPrefixLengths(), lastScanIP)) {
            log.info("Server Found");
        }           
         if(firstScannedServer == null) {
@@ -224,53 +229,77 @@ public class DivvyClient implements ClientInterface{
      * @param prefixLength
      * @return isServerFound
      */
-    private boolean checkServerOnSubnet(InetAddress inetAddress, int prefixLength, InetAddress lastScanIP) {
-        if (inetAddress.getAddress().length!=4) {
-            // Only for IPv4
+    private boolean checkServerOnSubnet(List<InetAddress> inetAddresses, List<Integer> prefixLengths, InetAddress lastScanIP) {
+        if (inetAddresses.size() == 0) {
+            log.info("No Address Provided for Scan! Returing");
             return false;
         }
         
-        //IPv4
-        byte[] address = inetAddress.getAddress();
-        int suffixMask0 = 32 - prefixLength;
-        
-        //Max Node 255.255.255.0
-        suffixMask0 = Math.min(suffixMask0, 8);
-        
-        int lastByteMin = address[3], lastByteMax = address[3];
-        lastByteMin = lastByteMin&~((1<<suffixMask0) - 1);
-        lastByteMax = lastByteMax|((1<<suffixMask0) - 1);
-        
-//        //Not Sure
-//        if (lastByteMin == 0)
-//            lastByteMin = 1;
-//        if (lastByteMax == 255)
-//            lastByteMax = 254;
-        
-        int lastByteStart = lastByteMin;
-        if (lastScanIP!=null) {
-            lastByteStart = (lastScanIP.getAddress()[3]+1)%256;
-        }
-        
-        log.info("Going to Scan "+(lastByteMax-lastByteMin+1)+" Nodes");
         try{
-            if(lastByteMax>=lastByteMin)
-            for (int lastByteCounter = 0; lastByteCounter < lastByteMax-lastByteMin+1; lastByteCounter++) {
-                int lastByte = lastByteMin+((lastByteStart-lastByteMin)+lastByteCounter)%(lastByteMax-lastByteMin+1);
-                address[3] = (byte) lastByte;
-                try {
-                    if (checkForServer(InetAddress.getByAddress(address))) {
-                        return true;
-                    }
-                } catch (UnknownHostException ex) {
+            for(int i=lastScannedIPListIndex;i<inetAddresses.size();i++) {
+                if(lastScannedIPListIndex!=i)
+                    lastScannedIPSuffix = -1;
+                lastScannedIPListIndex = i;
+                    
+                int scanIndex = i;
 
+                InetAddress inetAddress = inetAddresses.get(scanIndex);
+                int prefixLength = prefixLengths.get(scanIndex);
+
+                if (inetAddress.getAddress().length!=4) {
+                    // Only for IPv4
+                    continue;
+                }
+
+                //IPv4
+                byte[] address = inetAddress.getAddress();
+                int suffixMask0 = 32 - prefixLength;
+
+                //Masking The Address
+                for (int j = 0; j < 4; j++) {
+                    int mySuffix = suffixMask0 - 8*(3-j);
+                    mySuffix = Math.min(mySuffix, 8);
+                    mySuffix = Math.max(mySuffix, 0);
+                    address[j] &= (byte)~((1<<mySuffix) - 1);
+                }
+                
+        //        //Not Sure
+        //        if (lastByteMin == 0)
+        //            lastByteMin = 1;
+        //        if (lastByteMax == 255)
+        //            lastByteMax = 254;
+
+                log.info("Going to Scan "+((1<<suffixMask0)-(lastScannedIPSuffix+1))+" Nodes " + InetAddress.getByAddress(address));
+                try{
+                    for (lastScannedIPSuffix++; lastScannedIPSuffix <= (1<<suffixMask0)-1; lastScannedIPSuffix++) {
+                        for (int byteIndex = 0; byteIndex < 4; byteIndex++) {
+                            int mySuffix = suffixMask0 - 8*(3-byteIndex);
+                            mySuffix = Math.min(mySuffix, 8);
+                            mySuffix = Math.max(mySuffix, 0);
+                            address[byteIndex] = (byte) (
+                                    (address[byteIndex] & ~((1<<mySuffix)-1))
+                                    | (lastScannedIPSuffix>>8*(3-byteIndex) & ((1<<mySuffix)-1)));
+                        }
+                        try {
+                            if (checkForServer(InetAddress.getByAddress(address))) {
+                                return true;
+                            }
+                        } catch (UnknownHostException ex) {
+
+                        }
+                    }
+                }
+                finally{
+                    log.info("Scan Completed for "+inetAddress);
                 }
             }
-            return false;
+        } catch (UnknownHostException ex) {
+            log.info(ex.toString());
+        }finally{
+            log.info("Full Scan Completed!");
         }
-        finally{
-            log.info("Scan Completed!");
-        }
+        lastScannedIPSuffix = -1;
+        return false;
     }
     
     /**

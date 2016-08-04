@@ -8,6 +8,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -27,7 +29,7 @@ public class Configuration {
     public static int PORT_SCAN_TIMEOUT = 5000;
     public static int CLIENT_CONNECT_TIMEOUT = 5000;
     
-    public static long SCHEDULER_REFRESH_TIMER  = 1*60*1000;
+    public static long SCHEDULER_REFRESH_TIMER  = 15*60*1000;
     
     public static boolean AUTO_EXPORTPROJECT_ONLOAD = false;
     
@@ -46,13 +48,12 @@ public class Configuration {
     private static final String CONF_FILENAME = "conf.properties";
     
     private static final String CONF_INTERAL_IP = "INTERNAL_IP";
-    private static final String CONF_PREFIX_LENGTH = "PREFIX_LENGTH";
     private static final String CONF_MAX_SIZE_DISK = "MAX_SIZE_ON_DISK_MB";
     
     private boolean isLoadedFine;
     
-    private int prefixLength;
-    private InetAddress internalIP;
+    private List<Integer> prefixLength;
+    private List<InetAddress> internalIPs;
     
     public static int MAX_PROJECT_ALLOWED_SIZE = 10*1024*1024;
     private int maxSizeAllowedOnDisk;
@@ -63,10 +64,13 @@ public class Configuration {
     public Configuration() {
         Paths paths = new Paths();
         File conf = new File(paths.getConfDir(),CONF_FILENAME);
+        prefixLength = new ArrayList();
+        internalIPs = new ArrayList<>();
         if(!conf.exists()) {
             log.info("Configuration not Found!");
             createDefaultConfiguration(conf);
         }
+        
         isLoadedFine = loadConfiguration(conf);
     }
     
@@ -80,18 +84,24 @@ public class Configuration {
             fis = new FileInputStream(file);
             Properties properties = new Properties();
             properties.load(fis);
-            internalIP = InetAddress.getByName("127.0.0.1");
-            prefixLength = 31;
             maxSizeAllowedOnDisk = 200;
-            try{
-                internalIP = InetAddress.getByName(properties.getProperty(CONF_INTERAL_IP));
-            }catch(Exception e){
-                log.severe("Ignored "+CONF_INTERAL_IP);
+            String IPs = properties.getProperty(CONF_INTERAL_IP); 
+            String[] IPList = IPs.split(",");
+            for(String IP : IPList) {
+                try{
+                    int index = IP.indexOf("/");
+                    InetAddress address = InetAddress.getByName(IP.substring(0,index).trim());
+                    Integer prefix = Integer.parseInt(IP.substring(index+1).trim());
+                    internalIPs.add(address);
+                    prefixLength.add(prefix);
+                }catch(Exception e){
+                    log.severe("Ignored "+CONF_INTERAL_IP+" : "+IP);
+                }
             }
-            try{
-                prefixLength = Integer.parseInt(properties.getProperty(CONF_PREFIX_LENGTH));
-            }catch(Exception e){
-                log.severe("Ignored "+CONF_PREFIX_LENGTH);
+            if(internalIPs.size() == 0) {
+                internalIPs.add(InetAddress.getByName("127.0.0.1"));
+                prefixLength.add(31);
+            
             }
             try{
                 maxSizeAllowedOnDisk = Integer.parseInt(properties.getProperty(CONF_MAX_SIZE_DISK));
@@ -122,8 +132,7 @@ public class Configuration {
         try {
             os = new FileOutputStream(file);
             Properties properties = new Properties();
-            properties.put(CONF_INTERAL_IP, "172.16.156.0");
-            properties.put(CONF_PREFIX_LENGTH, String.valueOf(23));
+            properties.put(CONF_INTERAL_IP, "172.16.156.0/24,127.0.0.1/31");
             properties.put(CONF_MAX_SIZE_DISK, String.valueOf(200));
             properties.save(os, "Divvy Host Configuration" );
             os.flush();
@@ -145,18 +154,19 @@ public class Configuration {
 
     public boolean isLoadedFine() {
         if(isLoadedFine) {
-            log.info(CONF_INTERAL_IP + " = " + internalIP );
-            log.info(CONF_PREFIX_LENGTH + " = " + prefixLength );
+            for (int i = 0; i < internalIPs.size(); i++) {
+                log.info(CONF_INTERAL_IP + " = " + internalIPs.get(i) + "/" + prefixLength.get(i) );
+            }
             log.info(CONF_MAX_SIZE_DISK + " = " + maxSizeAllowedOnDisk + "MB" );
         }
         return isLoadedFine;
     }
 
-    public InetAddress getInternalIP() {
-        return internalIP;
+    public List<InetAddress> getInternalIPs() {
+        return internalIPs;
     }
 
-    public int getPrefixLength() {
+    public List<Integer> getPrefixLengths() {
         return prefixLength;
     }
 

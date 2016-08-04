@@ -299,6 +299,20 @@ public class Utils {
         }
         return sum;
     }
+
+    /**
+     * Get Integer from Unsigned byte
+     * @param ubyte
+     * @return integer
+     */
+    public static int getInt(byte ubyte) {
+        int num = 0;
+        for (int i = 0; i < 8; i++) {
+            if( (ubyte & ((byte)1<<i)) != 0)
+                num|=1<<i;
+        }
+        return num;
+    }
     
     
     

@@ -1,10 +1,19 @@
 language: java
 install: ant jar
 script:
-  - cd dist
-  - bash bin.sh install
+  - bash ./dist/bin.sh install
   - cd ~/Divvy/
-  - bash bin.sh -test
+  - cd ~/Divvy/bin.sh start
+  - sleep 30
+  - |
+    ~/Divvy/bin.sh -test 2>&1 |
+    grep "Another Instance is Running" || { echo "Not Running"; exit 1; }
+  - cd ~/Divvy/bin.sh stop
+  - |
+    ~/Divvy/bin.sh -test 2>&1 | 
+    grep "Another Instance is Running" || { echo "Still Running"; exit 1; }
+  - echo "Running and Stopping Working Fine";
+
 os:
   - linux
 jdk:

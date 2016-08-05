@@ -104,7 +104,9 @@ public class Host {
                     .append(htmlFilter(project.getDetails().getFileName()))
                     .append("\">"+securityTagStart)
                     .append(htmlFilter(project.getData().getTitle()))
-                    .append(securityTagEnd+"</a></name><desc>"+securityTagStart)
+                    .append(securityTagEnd+"</a>"+securityTagStart+"  ")
+                    .append(htmlFilter(project.getData().getAuthor()))
+                    .append(securityTagEnd+"</name><desc>"+securityTagStart)
                     .append(htmlFilter(project.getData().getDescription()))
                     .append(securityTagEnd+"</desc></project>\n");
         }
@@ -214,9 +216,11 @@ public class Host {
 "	word-wrap: break-word;\n" +
 "	\n" +
 "}\n" +
+"a {\n" +
+"	font-weight: bold;\n" +
+"}\n" +
 "name{\n" +
 "	display: block;\n" +
-"	font-weight: bold;\n" +
 "	margin-left: 10px;\n" +
 "	margin-right: 10px;\n" +
 "	margin-top: 5px;\n" +

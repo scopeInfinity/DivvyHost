@@ -1,6 +1,7 @@
 package divvyhost.project;
 
 import divvyhost.DivvyHost;
+import divvyhost.host.Host;
 import divvyhost.users.User;
 import java.io.File;
 import java.io.FileInputStream;
@@ -247,6 +248,7 @@ public class Project implements Serializable{
             ObjectOutputStream oos = new ObjectOutputStream(fos);
             oos.writeObject(this);
             oos.close();
+            
             return true;
         } catch (FileNotFoundException ex) {
             log.severe(ex.toString());
@@ -265,8 +267,12 @@ public class Project implements Serializable{
             log.severe(details.getFileName()+" Data Not Available for Export!");
             return false;
         }
-        if (signValidate())
-            return data.exportData(details.getFileName());
+        if (signValidate()) {
+            boolean isExported = data.exportData(details.getFileName());
+            if (Host.getInstance()!=null)
+                Host.getInstance().createMainPage();
+            return isExported;
+        }
         else {
             log.severe("Project ["+getDetails().getpID()+"] Signing Verify Failed!");
             return false;
@@ -302,6 +308,8 @@ public class Project implements Serializable{
             if (generateSign(privateKey)) {
                 details.setLastModified();
                 log.info("["+details.getFileName()+"] Project Imported");
+                if (Host.getInstance()!=null)
+                    Host.getInstance().createMainPage();
                 return true;
             } else {
                 this.data = olddata;

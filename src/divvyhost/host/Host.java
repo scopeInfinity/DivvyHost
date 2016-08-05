@@ -27,11 +27,22 @@ public class Host {
     private static String currentOS;
     private static String INDEXHTML_REPLACER = "[[PROJECT_LIST]]";
     
+    private static Host instance;
+    
     public Host(ProjectManager manager) {
         Paths paths = new Paths();
         this.manager = manager;
         manager.setHoster(this);
         hostDir = paths.getHostDir();
+        instance = this;
+    }
+    
+    /**
+     * Return Running Instance
+     * @return instance
+     */
+    public static Host getInstance() {
+        return instance;
     }
     
     /**

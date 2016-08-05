@@ -44,6 +44,8 @@ public class Controller {
         if (project.importProject(null, null, null, host.getUser().getPrivatekey()))
             if(project.save()) {
                 log.info("New Project Created Successfully!");
+                host.getProjectManager().loadAllProjects();
+                host.getProjectManager().updateHostPage();
                 return "New Project ID "+details.getpID();
             }
         log.info("Project Creation Failed!");
@@ -68,7 +70,6 @@ public class Controller {
                else
                {
                    if (project.save()) {
-                       host.getProjectManager().updateHostPage();
                        return "Pulled Successfull";
                    } else {
                        return "Error in Saving After Pulling";

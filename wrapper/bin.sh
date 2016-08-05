@@ -1,8 +1,11 @@
 #!/bin/bash
-JAR_FILE="$(pwd)/DivvyHost.jar"
+JAR_FILE="DivvyHost.jar"
 LOG_FILE='/tmp/divvy.log'
 PID_FILE='/tmp/divvy.pid'
+: ;BASEDIR=$(dirname "$0");
 
+# Just Make Executable if not
+chmod +x $0 > /dev/null;
 
 function init {
 	if ! type java &> /dev/null 
@@ -23,16 +26,6 @@ function init {
 init;
 
 function createAutoStart {
-	
-	filenameinit=$HOME/Divvy/init.sh;
-
-	echo '#!/bin/bash' > filenameinit;
-	echo 'pushd $1' >> filenameinit;
-	echo 'bash bin.sh start' >> filenameinit;
-	echo 'popd' >> filenameinit;
-
-	chmod +x filenameinit || exit 1;
-
 	filename=~/.config/autostart/Divvy.desktop;
 	
 	mkdir ~/.config;
@@ -48,12 +41,19 @@ function createAutoStart {
 	echo 'Comment[en_IN]=Divvy Host' >> $filename;
 	echo 'X-GNOME-Autostart-Delay=0' >> $filename;
 
+	# For init.d
+	echo ;
+	echo "To add it in service, please use ";
+	echo "Use \`sudo ln -s $HOME/Divvy/bin.sh /etc/init.d/divvy\` ";
+	echo ;
+
+
 }
 
 # Print Usage
 function _help {
-	echo "Usage: bin.sh <option> [DivvyHost.jar]"
-	echo "Usage: bin.sh install [DivvyHost.jar]"
+	echo "Usage: bin.sh <option>"
+	echo "Usage: bin.sh install"
 	echo
 	echo "Options:"
 	echo -e " -help\t\tHelp"
@@ -66,21 +66,17 @@ function _help {
 	echo "Service Options:"
 	echo -e " start\t\tStart DivvyHost"
 	echo -e " stop\t\tStop DivvyHost"
-	echo -e " reload\t\tReload DivvyHost"
+	echo -e " restart\tRestart DivvyHost"
 	echo
 	exit
 }
 
-# Set jar Filename
-if [ $# -eq 2 ]
-then
-	JAR_FILE=$2
-fi
-
 # Start DivvyHost
 function start {
+	pushd $BASEDIR;
 	nohup java -jar "$JAR_FILE" -nogui &> $LOG_FILE &
 	echo $! > $PID_FILE;
+	popd
 	echo "DivvyHost Started Called"	
 }
 
@@ -104,10 +100,11 @@ function install {
 	then
 	echo "Directory Created $HOME/Divvy/"
 	fi
-	cp "bin.sh" "$HOME/Divvy/" 
-	parent_dir="$(dirname "$JAR_FILE")"
-	cp -r "lib/" "$HOME/Divvy/"
-	cp "$JAR_FILE" "$HOME/Divvy/DivvyHost.jar"
+	sed "s|^: ;BASEDIR.*|: ;BASEDIR\=$HOME/Divvy|g" < "$BASEDIR/bin.sh" > "$HOME/Divvy/bin.sh"
+	chmod +x "$HOME/Divvy/bin.sh"
+
+	cp -r "$BASEDIR/lib/" "$HOME/Divvy/"
+	cp "$BASEDIR/$JAR_FILE" "$HOME/Divvy/DivvyHost.jar"
 
 	createAutoStart;
 
@@ -115,6 +112,11 @@ function install {
 }
 
 
+function launch {
+	pushd $BASEDIR;
+	java -jar "$JAR_FILE" $1;
+	popd;
+}
 
 if [ $# -eq 0 ]
 then
@@ -127,19 +129,19 @@ else
 			_help;
 			;;
 		"-run" )
-			java -jar "$JAR_FILE";
+			
 			;;
 		"-nogui" )
-			java -jar "$JAR_FILE" -nogui;
+			launch -nogui;
 			;;
 		"-test" )
-			java -jar "$JAR_FILE" -service=test;
+			launch -service=test;
 			;;
 		"-show" )
-			java -jar "$JAR_FILE" -service=startgui;
+			launch -service=startgui;
 			;;
 		"-hide" )
-			java -jar "$JAR_FILE" -service=stopgui;
+			launch -service=stopgui;
 			;;
 		"start" )
 			start;

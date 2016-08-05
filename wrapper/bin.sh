@@ -33,7 +33,7 @@ function createAutoStart {
 
 	echo '[Desktop Entry]' > $filename;
 	echo 'Type=Application' >> $filename;
-	echo "Exec=$HOME/Divvy/init.sh $HOME/Divvy/" >> $filename;
+	echo "Exec=$HOME/Divvy/bin.sh start" >> $filename;
 	echo 'X-GNOME-Autostart-enabled=true' >> $filename;
 	echo 'NoDisplay=false' >> $filename;
 	echo 'Hidden=false' >> $filename;
@@ -41,10 +41,10 @@ function createAutoStart {
 	echo 'Comment[en_IN]=Divvy Host' >> $filename;
 	echo 'X-GNOME-Autostart-Delay=0' >> $filename;
 
-	# For init.d
+	# For Easy Access
 	echo ;
-	echo "To add it in service, please use ";
-	echo "Use \`sudo ln -s $HOME/Divvy/bin.sh /etc/init.d/divvy\` ";
+	echo "To add it in /usr/bin, please use ";
+	echo "Use \`sudo ln -s $HOME/Divvy/bin.sh /usr/bin/divvy\` ";
 	echo ;
 
 

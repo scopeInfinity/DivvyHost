@@ -129,7 +129,7 @@ else
 			_help;
 			;;
 		"-run" )
-			
+			launch;
 			;;
 		"-nogui" )
 			launch -nogui;

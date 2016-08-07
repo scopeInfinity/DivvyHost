@@ -54,7 +54,7 @@ public class Host {
         log.info("Starting Hosting Server");
         ArrayList<Script> list = new ArrayList<>();
         list.add(new Script("run.sh", "cd "+hostDir.getAbsolutePath()+"; python -m SimpleHTTPServer "+WEB_PORT+"", "Linux"));
-        list.add(new Script("run.bat", "cd "+hostDir.getAbsolutePath()+"; python -m SimpleHTTPServer "+WEB_PORT+"", "Windows"));
+        list.add(new Script("run.bat", "cd "+hostDir.getAbsolutePath()+"\npython -m SimpleHTTPServer "+WEB_PORT+"", "Windows"));
 
         for (Script script : list) {
             if(script.create(hostDir))
@@ -170,6 +170,7 @@ public class Host {
                 return false;
             }
             try {
+                log.info("OS "+OS+" is Running");
                 String escapedFilename=file.getAbsolutePath().replaceAll(" ", "\\ ");
                 String cmd = prefix+" "+escapedFilename+"";
                 Process process = runtime.exec(cmd);

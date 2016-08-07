@@ -4,6 +4,9 @@ set LOG_FILE=%temp%\divvy.log
 set PID_FILE=%temp%\divvy.pid
 ;set BASEDIR=%~dp0
 set HOME=C:
+set INSTALLDIR=%HOME%\Divvy
+
+set JAR_CP=-cp %JAR_FILE%;lib\kryonet-2.21-all.jar divvyhost.DivvyHost
 
 :: init Testing
 :: Check, if Everything is Alright
@@ -42,9 +45,21 @@ set HOME=C:
 
 :: Startup File
 goto createAutoStartCont
-call:createAutoStart
+:createAutoStart
+	set STARTFILE="%USERPROFILE%\Start Menu\Programs\Startup\divvy.cmd"
+	if not exist %INSTALLDIR%\bin.cmd% (
+			echo[ Not Installed Properly!
+			EXIT /B 1
+		)
+	echo @echo on > %STARTFILE% || (
+		echo[ Startup File Creation Failed!!
+		EXIT /B 1
+		)
+	echo %INSTALLDIR%\bin.cmd start >> %STARTFILE%
+	echo pause >> %STARTFILE%
+	
 	echo[
-	echo Start up file not Created!!!
+	echo[ Startup Created!
 	echo[
 EXIT /B 0
 :createAutoStartCont
@@ -52,8 +67,8 @@ EXIT /B 0
 :: Print Usage
 goto _helpContinue
 :_help 
-	echo Usage^: bin.sh ^<option^>
-	echo Usage^: bin.sh install
+	echo Usage^: bin.cmd ^<option^>
+	echo Usage^: bin.cmd install
 	echo[
 	echo Options^:
 	echo[ -help 		Help
@@ -75,7 +90,7 @@ EXIT /B 0
 goto startContinue
 :start
 	pushd %BASEDIR%
-	start /min java -jar %JAR_FILE% -nogui > %LOG_FILE% 2>&1 
+	start javaw %JAR_CP% -nogui > %LOG_FILE% 2>&1 
 	::echo $! > $PID_FILE;
 	popd
 	echo DivvyHost Started Called
@@ -98,30 +113,26 @@ EXIT /B 0
 
 ::Install
 goto installContinue
-:install {
+:install 
 
 	echo Installing
-	mkdir %HOME%\Divvy\ > NUL 2>&1
-	if %ERRORLEVEL%==0 echo Directory Created %HOME%\Divvy\
+	mkdir %INSTALLDIR% > NUL 2>&1
+	if %ERRORLEVEL%==0 echo Directory Created %INSTALLDIR%
 
-::  Need to Replace	
-::	sed "s|^: ;BASEDIR.*|: ;BASEDIR\=$HOME/Divvy|g" < "$BASEDIR/bin.sh" > "$HOME/Divvy/bin.sh"
-	
-	mkdir %HOME%\Divvy\lib > NUL 2>&1
-	copy /Y %BASEDIR% %HOME%\Divvy\
-	if not %ERRORLEVEL% (
-		echo Unable to Copy from %BASEDIR% to %HOME%\Divvy\
+	mkdir %INSTALLDIR%\lib > NUL 2>&1
+	copy /Y %BASEDIR% %INSTALLDIR%
+	if not %ERRORLEVEL%==0 (
+		echo Unable to Copy from %BASEDIR% to %INSTALLDIR%
 		EXIT 1
 	)
-	copy /Y %BASEDIR%\lib %HOME%\Divvy\lib
-	if not %ERRORLEVEL% (
-		echo Unable to Copy from %BASEDIR%\lib to %HOME%\Divvy\lib
+	copy /Y %BASEDIR%\lib %INSTALLDIR%\lib
+	if not %ERRORLEVEL%==0 (
+		echo Unable to Copy from %BASEDIR%\lib to %INSTALLDIR%\lib
 		EXIT 1
 	)
 	
 	call:createAutoStart
 
-}
 EXIT /B 0
 :installContinue
 
@@ -131,7 +142,7 @@ goto launchContinue
 	::generate Arguments
 	set arg=%1
 	if not "%2"=="" set arg=%1=%2
-	java -jar %JAR_FILE% %arg%
+	java %JAR_CP% %arg%
 	popd
 EXIT /B 0
 :launchContinue
@@ -147,6 +158,7 @@ if "%1"==""  (
 	) ELSE IF "%1"=="-test" (call:launch -service=test
 	) ELSE IF "%1"=="-show" (call:launch -service=startgui
 	) ELSE IF "%1"=="-hide" (call:launch -service=stopgui
+	) ELSE IF "%1"=="install" (call:install
 	) ELSE IF "%1"=="start" (call:start
 	) ELSE IF "%1"=="stop" (call:stop
 	) ELSE IF "%1"=="restart" (

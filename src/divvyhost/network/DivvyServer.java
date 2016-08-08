@@ -11,6 +11,7 @@ import divvyhost.project.Project;
 import divvyhost.project.ProjectManager;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
@@ -25,7 +26,6 @@ import java.util.logging.Logger;
 public class DivvyServer {
     private static final Logger log = Logger.getLogger(DivvyServer.class.getName());
 
-    private ServerConnection connection;
     private Server server;
     private String user;
     
@@ -44,8 +44,7 @@ public class DivvyServer {
 
             @Override
             protected Connection newConnection() {
-                connection = new ServerConnection();
-                return connection;
+                return new ServerConnection();
             }
             
         };
@@ -56,7 +55,11 @@ public class DivvyServer {
     public boolean start() {
         try {
             server.bind(Configuration.PORT_TCP);
-            fastSocket = new ServerSocket(Configuration.PORT_FAST);
+            try{
+                fastSocket = new ServerSocket(Configuration.PORT_FAST);
+            }catch(BindException e) {
+                log.info("Fast Socket Already Binded");
+            }
             server.start();
             if(fastScanServerEnabled)
                 fastSockerReply();
@@ -74,6 +77,11 @@ public class DivvyServer {
 
             @Override
             public void run() {
+                if(fastScanServerEnabled) {
+                    if(fastSocket == null) {
+                        log.severe("FastSocket is NULL, can't Reply!!!");
+                    }
+                }
                 isFastThreadRunning = true;
                 while(isFastThreadRunning) {
                     try {
@@ -92,6 +100,25 @@ public class DivvyServer {
         
         fastThread.start();
         
+    }
+    
+    /**
+     * Force Stop Server
+     */
+    public void forceStop() {
+        isFastThreadRunning = false;
+        if(server!=null) {
+            Connection[] connections = server.getConnections();
+            for(Connection connection : connections) {
+                connection.close();
+            }
+            server.stop();
+            server.close();
+            server.getUpdateThread().stop();
+            log.info(">>>>> Foce Stopping");
+        }
+        if(fastThread!=null)
+            fastThread.stop();
     }
     
     private class ServerConnection extends Connection implements ServerInterface {
@@ -131,6 +158,6 @@ public class DivvyServer {
             log.info("Client taken User");
             return user;
         }
-        
+
     }
 }

@@ -12,7 +12,10 @@ import java.util.logging.Logger;
 public class NetworkManager {
     private static final Logger log = Logger.getLogger(NetworkManager.class.getName());
     
-    private DivvyServer divvyServer;
+    private static DivvyServer divvyServer;
+    private DivvyClient divvyClient;
+    private Thread serverThread;
+        
     private ProjectManager projectManager; 
     private String user;
     
@@ -21,19 +24,48 @@ public class NetworkManager {
     public NetworkManager(ProjectManager projectManager, String user) {
         this.projectManager = projectManager;
         this.user = user;
-        divvyServer = new DivvyServer(projectManager, user);
-        if (!divvyServer.start()) {
-            log.severe("SERVER CANNOT BE STARTED!!!!!!!!!");
-        }
+        
         internalScanCounter = 0;
+        checkServerThread();
+    }
+    
+    /**
+     * Recreate Server if Crashed
+     */
+    void checkServerThread() {
+        if(serverThread == null || !serverThread.isAlive()) {
+            if (divvyServer!=null)
+                divvyServer.forceStop();
+            if(serverThread!=null)
+                serverThread.stop();
+            serverThread = null;
+            System.gc();
+            serverThread = new Thread("ServerThread"){
+
+                @Override
+                public void run() {
+                    divvyServer = new DivvyServer(projectManager, user);
+                    if (!divvyServer.start()) {
+                        log.severe("SERVER CANNOT BE STARTED!!!!!!!!!");
+                    }
+                }
+                
+            };
+            log.info("Server Thread Created!");
+            serverThread.start();
+            log.info("Server Thread Started!");
+        } else log.info("Server Thread is Already Alive");
+        log.info("Server Thread Done Check");
     }
     /**
      * Start Syncing Current Project with others
      * Currently Checking all Possible Server in One Go
      */
     void startSync() {
-        DivvyClient divvyClient = new DivvyClient(projectManager, user);
         internalScanCounter = 0;
+        if(divvyClient==null)
+            divvyClient = new DivvyClient(projectManager, user);
+        
         while(true) {
             if (!divvyClient.scanNetwork()) {
                 log.info("No other Server Found on Network");

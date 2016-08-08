@@ -51,15 +51,17 @@ public class DivvyClient implements ClientInterface{
         this.user = user;
         serverDone = new HashSet<InetAddress>();
         configuration = new Configuration();
-        initClient();        
-        lastScannedIPListIndex = 0;
-        lastScannedIPSuffix = -1;
             
     }
     
     private void initClient() {
+        lastScannedIPListIndex = 0;
+        lastScannedIPSuffix = -1;
         client = new Client(Configuration.BUFFER_SIZE_CLIENT1, Configuration.BUFFER_SIZE_CLIENT2);
         NetworkRegister.register(client);
+    }
+     
+    private void getRemoteObj() {
         divvyServer = ObjectSpace.getRemoteObject(client, NetworkRegister.RMI_SERVER, ServerInterface.class);
     }
     
@@ -69,7 +71,8 @@ public class DivvyClient implements ClientInterface{
      */
     public boolean scanNetwork() {
         InetAddress lastScanIP = lastScannedAddress;
-        
+        lastScannedIPListIndex = 0;
+        lastScannedIPSuffix = -1;
         lastScannedAddress = null;
         firstScannedServer = null;
         isLastFreshServer = false;
@@ -141,13 +144,12 @@ public class DivvyClient implements ClientInterface{
             return false;
         }
         try {
-            if (client!=null) {
+            if (client==null) {
                 initClient();
             }
-            
             client.start();
             client.connect(Configuration.CLIENT_CONNECT_TIMEOUT, lastScannedAddress, Configuration.PORT_TCP);
-
+            getRemoteObj();
                 //Verifing Other Server
                 try{
                     if(divvyServer.isDivvyServer()) {
@@ -161,16 +163,17 @@ public class DivvyClient implements ClientInterface{
                         }
                     }
                 }catch(Exception e) {
-                    log.severe("Invalid Client");
+                    log.severe("Invalid Server : "+e);
                 }
 
                 return false;
         } catch (Exception ex) {
                 log.severe(ex.toString());
-        }
-        if(client!=null) {
-            client.stop();
-            client.close();
+        } finally {
+            if(client!=null) {
+                client.close();
+                client.stop();
+            }
         }
         return false;
     }
@@ -224,7 +227,7 @@ public class DivvyClient implements ClientInterface{
     
     /**
      * Find any Server Running on given IP/Subnet
-     * Note : For now checking for max 254 nodes, on IPv4 Only
+     * Note : On IPv4 Only
      * @param address
      * @param prefixLength
      * @return isServerFound

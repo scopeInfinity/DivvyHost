@@ -1,7 +1,5 @@
 package divvyhost.network;
 
-import com.esotericsoftware.kryonet.Client;
-import com.esotericsoftware.kryonet.rmi.ObjectSpace;
 import divvyhost.configuration.Configuration;
 import static divvyhost.configuration.Configuration.FAST_SCAN_MESSAGE;
 import static divvyhost.configuration.Configuration.fastScanEnabled;
@@ -11,14 +9,19 @@ import divvyhost.project.ProjectManager;
 import divvyhost.utils.Utils;
 import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
+import java.net.MalformedURLException;
 import java.net.NetworkInterface;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.rmi.Naming;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
@@ -35,7 +38,6 @@ public class DivvyClient implements ClientInterface{
     private static final Logger log = Logger.getLogger(DivvyClient.class.getName());
     
     private InetAddress lastScannedAddress;
-    private Client client;
     private ServerInterface divvyServer;
     
     private ProjectManager projectManager; 
@@ -57,12 +59,21 @@ public class DivvyClient implements ClientInterface{
     private void initClient() {
         lastScannedIPListIndex = 0;
         lastScannedIPSuffix = -1;
-        client = new Client(Configuration.BUFFER_SIZE_CLIENT1, Configuration.BUFFER_SIZE_CLIENT2);
-        NetworkRegister.register(client);
     }
      
     private void getRemoteObj() {
-        divvyServer = ObjectSpace.getRemoteObject(client, NetworkRegister.RMI_SERVER, ServerInterface.class);
+        try {
+            divvyServer = (ServerInterface)Naming.lookup("rmi://"+lastScannedAddress.getHostAddress()+"/divvy");
+            log.info("Got Server Object : "+lastScannedAddress.getHostAddress());
+            return;
+        } catch (NotBoundException ex) {
+            log.severe(ex.toString());
+        } catch (MalformedURLException ex) {
+            log.severe(ex.toString());
+        } catch (RemoteException ex) {
+            log.severe(ex.toString());
+        }
+        log.severe("Server Object get Failed! : "+lastScannedAddress.getHostAddress());
     }
     
     /**
@@ -120,6 +131,7 @@ public class DivvyClient implements ClientInterface{
     }
     
     private boolean isLastFreshServer;
+    
     /**
      * Return if Last Scanned Server is New
      * @return isNew
@@ -144,12 +156,7 @@ public class DivvyClient implements ClientInterface{
             return false;
         }
         try {
-            if (client==null) {
-                initClient();
-            }
-            client.start();
-            client.connect(Configuration.CLIENT_CONNECT_TIMEOUT, lastScannedAddress, Configuration.PORT_TCP);
-            getRemoteObj();
+             getRemoteObj();
                 //Verifing Other Server
                 try{
                     if(divvyServer.isDivvyServer()) {
@@ -170,10 +177,7 @@ public class DivvyClient implements ClientInterface{
         } catch (Exception ex) {
                 log.severe(ex.toString());
         } finally {
-            if(client!=null) {
-                client.close();
-                client.stop();
-            }
+           
         }
         return false;
     }
@@ -181,25 +185,35 @@ public class DivvyClient implements ClientInterface{
     /**
      * Disconnect connection with server if connecter
      */
+    @Deprecated
     public void disconnect() {
-        if (client != null) {
-            client.stop();
-            client.close();
-        }
     }
 
     /**
      * Request Server for project Update
      */
     public void sync() {
-        List<Details> othersList = divvyServer.listDetails();
+        List<Details> othersList = null;
+        try {
+            othersList = divvyServer.listDetails();
+        } catch (RemoteException ex) {
+        }
+        
+        if(othersList == null) {
+            log.info("Failed to Fetch Others List");
+            return; 
+        }
         log.info("Number of Project of Server["+lastScannedAddress.getHostAddress()+"] "+othersList.size());
         List<Details> fetchThese = projectManager.processOtherClientList(othersList);
         log.info("Number of New Project of Server["+lastScannedAddress.getHostAddress()+"] "+fetchThese.size());
         
         for (Details projectDetails : fetchThese) {
             
-            Project newProject = divvyServer.getProject(projectDetails.getpID().toString());
+            Project newProject = null;
+            try {
+                newProject = divvyServer.getProject(projectDetails.getpID().toString());
+            } catch (RemoteException ex) {
+            }
             if(newProject == null)
             {
                 log.severe("Server["+lastScannedAddress.getHostAddress()+"] Project Failed to Fetch :"+projectDetails.getpID() );
@@ -318,7 +332,8 @@ public class DivvyClient implements ClientInterface{
         // Timeout for Checking 20ms
         try {
             Socket socket = new Socket();
-            socket.connect(new InetSocketAddress(address, Configuration.PORT_FAST), 100);
+            socket.connect(new InetSocketAddress(address, Configuration.PORT_FAST), 200);
+            System.out.println("Connected");
             boolean working = false;
             if(socket.isConnected()) {
                 if (fastScanEnabled) {

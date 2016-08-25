@@ -37,8 +37,6 @@ public class Scheduler implements Runnable{
         
         log.info("Scheduler Perdiodic Start");
         try{
-            log.info("Checking Server Thread");
-            networkManager.checkServerThread();
             log.info("Going for Sync");
             networkManager.startSync();
         }catch(Exception e) {

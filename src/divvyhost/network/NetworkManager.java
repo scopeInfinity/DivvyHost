@@ -1,6 +1,8 @@
 package divvyhost.network;
 
+import divvyhost.configuration.Configuration;
 import divvyhost.project.ProjectManager;
+import java.rmi.RemoteException;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,18 +26,25 @@ public class NetworkManager {
     public NetworkManager(ProjectManager projectManager, String user) {
         this.projectManager = projectManager;
         this.user = user;
-        
+        try {
+            java.rmi.registry.LocateRegistry.createRegistry(Configuration.PORT_RPC);
+            log.info("Created Registry :"+Configuration.PORT_RPC);
+        } catch (RemoteException ex) {
+            log.severe(ex.toString());
+            log.severe("\nCreatingRegistry Failed!!\n\n");
+        }
         internalScanCounter = 0;
-        checkServerThread();
+        startServerThread();
     }
     
     /**
-     * Recreate Server if Crashed
+     * Start Server Thread
      */
-    void checkServerThread() {
-        if(serverThread == null || !serverThread.isAlive()) {
-            if (divvyServer!=null)
+    void startServerThread() {
+        if(serverThread == null) {
+            if (divvyServer!=null) {
                 divvyServer.forceStop();
+            }
             if(serverThread!=null)
                 serverThread.stop();
             serverThread = null;
@@ -46,7 +55,7 @@ public class NetworkManager {
                 public void run() {
                     divvyServer = new DivvyServer(projectManager, user);
                     if (!divvyServer.start()) {
-                        log.severe("SERVER CANNOT BE STARTED!!!!!!!!!");
+                        log.severe("\n\nSERVER CANNOT BE STARTED!!!!!!!!!\n\n");
                     }
                 }
                 

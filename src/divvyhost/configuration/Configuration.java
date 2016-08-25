@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 public class Configuration {
     private static final Logger log = Logger.getLogger(Configuration.class.getName());
     
-    public static int PORT_TCP      = 10403;
+    public static int PORT_RPC      = 1099;
     public static int PORT_FAST     = 10404;
     public static int PORT_SERVICE  = 10405;
     public static int WEB_PORT      = 9999; 
@@ -38,8 +38,8 @@ public class Configuration {
     public static int BUFFER_SIZE_CLIENT1 = 20*1024*1024;
     public static int BUFFER_SIZE_CLIENT2 = 20*1024*1024;
     
-    public static boolean fastScanEnabled           = false;
-    public static boolean fastScanServerEnabled     = false;
+    public static boolean fastScanEnabled           = true;
+    public static boolean fastScanServerEnabled     = true;
     public static String FAST_SCAN_MESSAGE          = "[[DivvyHost]]";
     
     public static String SIGN_ALGO = "DSA";

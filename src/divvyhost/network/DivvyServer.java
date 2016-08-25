@@ -1,8 +1,5 @@
 package divvyhost.network;
 
-import com.esotericsoftware.kryonet.Connection;
-import com.esotericsoftware.kryonet.Server;
-import com.esotericsoftware.kryonet.rmi.ObjectSpace;
 import divvyhost.configuration.Configuration;
 import static divvyhost.configuration.Configuration.FAST_SCAN_MESSAGE;
 import static divvyhost.configuration.Configuration.fastScanServerEnabled;
@@ -14,6 +11,9 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.rmi.Naming;
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -26,10 +26,10 @@ import java.util.logging.Logger;
 public class DivvyServer {
     private static final Logger log = Logger.getLogger(DivvyServer.class.getName());
 
-    private Server server;
+    private ServerConnection server;
     private String user;
     
-    private ServerSocket fastSocket;
+    private static ServerSocket fastSocket;
     private Thread fastThread;
     private boolean isFastThreadRunning;
     
@@ -40,27 +40,15 @@ public class DivvyServer {
         this.user = user;
         log.info("Server Started for User :"+user);
         
-        server = new Server(Configuration.BUFFER_SIZE_SERVER1, Configuration.BUFFER_SIZE_SERVER2){
-
-            @Override
-            protected Connection newConnection() {
-                return new ServerConnection();
-            }
-            
-        };
-        NetworkRegister.register(server);
+        server = null;
                 
     }
     
     public boolean start() {
         try {
-            server.bind(Configuration.PORT_TCP);
-            try{
-                fastSocket = new ServerSocket(Configuration.PORT_FAST);
-            }catch(BindException e) {
-                log.info("Fast Socket Already Binded");
-            }
-            server.start();
+            server = new ServerConnection();
+            Naming.rebind("rmi://127.0.0.1/divvy", server);
+            rebindFastSocket();
             if(fastScanServerEnabled)
                 fastSockerReply();
             return true;
@@ -68,6 +56,18 @@ public class DivvyServer {
             log.severe(ex.toString());
         }
         return false;
+    }
+    
+    private void rebindFastSocket() {
+        try{
+            if(fastSocket==null)
+                fastSocket = new ServerSocket(Configuration.PORT_FAST);
+            log.info("Fast Socket Binded");
+        }catch(BindException e) {
+            log.info("Fast Socket Already Binded");
+        } catch (IOException ex) {
+          log.info("Fast Socket Already Binded");
+        }
     }
     
     private void fastSockerReply() {
@@ -79,13 +79,17 @@ public class DivvyServer {
             public void run() {
                 if(fastScanServerEnabled) {
                     if(fastSocket == null) {
-                        log.severe("FastSocket is NULL, can't Reply!!!");
+                        rebindFastSocket();
+                    }
+                    if(fastSocket == null) {
+                        log.severe("FastSocket is NULL, can't Reply!!! ");
                     }
                 }
                 isFastThreadRunning = true;
                 while(isFastThreadRunning) {
                     try {
                         Socket socket = fastSocket.accept();
+                        System.out.println("FASTSOCKET : "+fastSocket);
                         BufferedOutputStream bos = new BufferedOutputStream(socket.getOutputStream());
                         bos.write(FAST_SCAN_MESSAGE.getBytes());
                         bos.flush();
@@ -105,30 +109,27 @@ public class DivvyServer {
     /**
      * Force Stop Server
      */
+    @Deprecated
     public void forceStop() {
+        log.severe("Calling @Deprecated, forceStop");
+                
         isFastThreadRunning = false;
         if(server!=null) {
-            Connection[] connections = server.getConnections();
-            for(Connection connection : connections) {
-                connection.close();
-            }
-            server.stop();
-            server.close();
-            server.getUpdateThread().stop();
+            server = null;
             log.info(">>>>> Foce Stopping");
         }
         if(fastThread!=null)
             fastThread.stop();
     }
     
-    private class ServerConnection extends Connection implements ServerInterface {
+    private class ServerConnection extends UnicastRemoteObject implements ServerInterface {
         
-        ServerConnection() {
-            new ObjectSpace(this).register(NetworkRegister.RMI_SERVER, this);
+        ServerConnection() throws RemoteException {
+            
         }
 
         @Override
-        public List<Details> listDetails() {
+        public List<Details> listDetails() throws RemoteException {
             log.info("Client Requesting List of Projects");
             if(projectManager == null) {
                 log.severe("Project Manager NULL");
@@ -138,7 +139,7 @@ public class DivvyServer {
         }
 
         @Override
-        public Project getProject(String uuid) {
+        public Project getProject(String uuid) throws RemoteException  {
             log.info("Client Requesting Project "+uuid);
             if(projectManager == null) {
                 log.severe("Project Manager NULL");
@@ -148,13 +149,13 @@ public class DivvyServer {
         }
 
         @Override
-        public boolean isDivvyServer() {
+        public boolean isDivvyServer()  throws RemoteException {
             log.info("Client Tested isDivvyServer()");
             return true;
         }
 
         @Override
-        public String getUser() {
+        public String getUser() throws RemoteException  {
             log.info("Client taken User");
             return user;
         }

@@ -26,13 +26,13 @@ public class NetworkManager {
     public NetworkManager(ProjectManager projectManager, String user) {
         this.projectManager = projectManager;
         this.user = user;
-        try {
-            java.rmi.registry.LocateRegistry.createRegistry(Configuration.PORT_RPC);
-            log.info("Created Registry :"+Configuration.PORT_RPC);
-        } catch (RemoteException ex) {
-            log.severe(ex.toString());
-            log.severe("\nCreatingRegistry Failed!!\n\n");
-        }
+//        try {
+//            java.rmi.registry.LocateRegistry.createRegistry(Configuration.PORT_RPC);
+//            log.info("Created Registry :"+Configuration.PORT_RPC);
+//        } catch (RemoteException ex) {
+//            log.severe(ex.toString());
+//            log.severe("\nCreatingRegistry Failed!!\n\n");
+//        }
         internalScanCounter = 0;
         startServerThread();
     }
@@ -72,20 +72,17 @@ public class NetworkManager {
      */
     void startSync() {
         internalScanCounter = 0;
-        if(divvyClient==null)
+        if (divvyClient==null)
             divvyClient = new DivvyClient(projectManager, user);
+        else
+            divvyClient.reset();
         
         while(true) {
             if (!divvyClient.scanNetwork()) {
-                log.info("No other Server Found on Network");
+                log.info("Given Scanning range exhausted");
                 break;
             }
             
-            log.info("Last Server freshOne : "+divvyClient.isLastFreshServer());
-            if (!divvyClient.isLastFreshServer()) {
-                divvyClient.makeServerHistoryClear();
-                break;
-            }
             //Boolean, null value if ignored
             Boolean status = divvyClient.connect();
             if (status!=null && !status) {
@@ -98,7 +95,7 @@ public class NetworkManager {
             divvyClient.disconnect();
             try {
                 Thread.sleep(100);
-                log.info("Sleep Server"+ ++internalScanCounter);
+                log.info("Sleep Server "+ ++internalScanCounter);
                 System.out.flush();
                 System.gc();
             } catch (Exception ex) {

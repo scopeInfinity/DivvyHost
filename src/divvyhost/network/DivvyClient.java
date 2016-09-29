@@ -22,6 +22,8 @@ import java.net.UnknownHostException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
@@ -37,43 +39,86 @@ import java.util.logging.Logger;
 public class DivvyClient implements ClientInterface{
     private static final Logger log = Logger.getLogger(DivvyClient.class.getName());
     
-    private InetAddress lastScannedAddress;
-    private ServerInterface divvyServer;
-    
     private ProjectManager projectManager; 
     private Configuration configuration;
     private String user;
     
-    private Set<InetAddress> serverDone;
+    private MessageCall divvyServer;
+    private Socket divvyServerSocket;
+    
+    //Set Containing IP Address of any server encountered
+    private Set<InetAddress> serverFound;
+    
+    //IP Address of Last Successfull Server
+    private InetAddress lastScannedAddress;
+    //Index of IP from configuration file,which is last scanned
     private int lastScannedIPListIndex;
+    //Suffix of last IP, which is last scanned
     private int lastScannedIPSuffix;
             
     public DivvyClient(ProjectManager projectManager, String user) {
         this.projectManager = projectManager;
         this.user = user;
-        serverDone = new HashSet<InetAddress>();
         configuration = new Configuration();
-            
+    
+        //Not in reset, may be used in some optimization later
+        serverFound = new HashSet<InetAddress>();
+        
+        reset();            
     }
     
-    private void initClient() {
+    /**
+     * Reset Object for reuse
+     */
+    public void reset() {
         lastScannedIPListIndex = 0;
         lastScannedIPSuffix = -1;
+        lastScannedAddress = null;
+        disconnect();
     }
      
-    private void getRemoteObj() {
+    /**
+     * Get Remote Object from RMI
+     * @ address
+     * @return gotRemoteObject.
+     */
+    private boolean getRemoteObj(InetAddress address) {
         try {
-            divvyServer = (ServerInterface)Naming.lookup("rmi://"+lastScannedAddress.getHostAddress()+"/divvy");
-            log.info("Got Server Object : "+lastScannedAddress.getHostAddress());
-            return;
-        } catch (NotBoundException ex) {
-            log.severe(ex.toString());
-        } catch (MalformedURLException ex) {
-            log.severe(ex.toString());
-        } catch (RemoteException ex) {
-            log.severe(ex.toString());
+            //        try {
+////            if (System.getSecurityManager() != null) {
+////                System.setSecurityManager(null);
+////            }
+////            Registry registry = LocateRegistry.getRegistry(lastScannedAddress.getHostAddress().toString(), Configuration.PORT_RPC);
+////            
+////            divvyServer = (ServerInterface) registry.lookup("divvy");
+//
+////            System.getProperties().put("java.rmi.server.hostname", ");
+////            
+////            divvyServer = (ServerInterface) Naming.lookup(
+////                    String.format("rmi://%s:%s/",
+////                            lastScannedAddress.getHostAddress().toString(),
+////                            String.valueOf(Configuration.PORT_RPC)) 
+////                            + "divvy");
+//            log.info("Got Server Object : "+lastScannedAddress.getHostAddress());
+//            log.info("Test : "+divvyServer.isDivvyServer()+"\n\n\n");
+//            log.info(""+divvyServer.getUser()+"\n\n\n");
+//
+//            return true; 
+//        } catch (NotBoundException | RemoteException ex) {
+//            log.severe(ex.toString());
+//            ex.printStackTrace();
+////        } catch (MalformedURLException ex) {
+////            log.severe(ex.toString());
+//        }
+//      
+            divvyServerSocket = new Socket(address, Configuration.PORT_RPC);
+            divvyServer = new MessageCall(divvyServerSocket);
+            return true;
+        } catch (Exception ex) {
+            log.severe("Server Object get Failed! : "+lastScannedAddress.getHostAddress());
         }
-        log.severe("Server Object get Failed! : "+lastScannedAddress.getHostAddress());
+        log.severe("Got Server Object : "+lastScannedAddress.getHostAddress());
+        return false;
     }
     
     /**
@@ -82,70 +127,22 @@ public class DivvyClient implements ClientInterface{
      */
     public boolean scanNetwork() {
         InetAddress lastScanIP = lastScannedAddress;
-        lastScannedIPListIndex = 0;
-        lastScannedIPSuffix = -1;
         lastScannedAddress = null;
-        firstScannedServer = null;
-        isLastFreshServer = false;
-        
-//        try {
-//              Client client = new Client();
-//        lastScannedAddress = client.discoverHost(Configuration.PORT_UCP, Configuration.PORT_SCAN_TIMEOUT);
-            
-            //Scanning Network Cards
-//            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
-//            while(lastScannedAddress==null && networkInterfaces.hasMoreElements()){
-//                NetworkInterface networkInterface = networkInterfaces.nextElement();
-//                
-//                for (InterfaceAddress interfaceAddress : networkInterface.getInterfaceAddresses()) {
-//                    if (checkServerOnSubnet(interfaceAddress.getAddress(), interfaceAddress.getNetworkPrefixLength())) {
-//                        log.info("Server Found on "+networkInterface.getDisplayName());
-//                        break;
-//                    }
-//                   
-//                }
-//
-//            }
-//        } catch (SocketException ex) {
-//            log.severe(ex.toString());
-//        }
         
         //Using Configuration File
-       if (checkServerOnSubnet(configuration.getInternalIPs(), configuration.getPrefixLengths(), lastScanIP)) {
-           log.info("Server Found");
-       }           
-        if(firstScannedServer == null) {
-            log.info("No Server Found");
-            return false;
-        }
+        if (checkServerOnSubnet(configuration.getInternalIPs(), configuration.getPrefixLengths(), lastScanIP)) {
+            log.info("Server Found");
+        }           
         
         if(lastScannedAddress == null) {
-            log.info("No New Server Found, Using already scanned one ["+firstScannedServer+"]");
-            lastScannedAddress = firstScannedServer;
-            serverDone.clear();
-            serverDone.add(lastScannedAddress);
+            log.info("No New Server Found");
+            return false;
         }
         
         log.info("Server["+lastScannedAddress.getHostAddress()+"] Found");
         return true;
     }
     
-    private boolean isLastFreshServer;
-    
-    /**
-     * Return if Last Scanned Server is New
-     * @return isNew
-     */
-    public boolean isLastFreshServer() {
-        return isLastFreshServer;
-    }
-
-    public void makeServerHistoryClear() {
-        serverDone.clear();
-        isLastFreshServer = false;
-        lastScannedAddress = null;
-        firstScannedServer = null;
-    }
     /**
      * Connect if last find Server, Returns null if Server is mine
      * @return isConnected
@@ -156,7 +153,10 @@ public class DivvyClient implements ClientInterface{
             return false;
         }
         try {
-             getRemoteObj();
+                if(!getRemoteObj(lastScannedAddress))
+                {
+                   return false;
+                }
                 //Verifing Other Server
                 try{
                     if(divvyServer.isDivvyServer()) {
@@ -183,60 +183,76 @@ public class DivvyClient implements ClientInterface{
     }
     
     /**
-     * Disconnect connection with server if connecter
+     * Disconnect connection with server if connected
      */
-    @Deprecated
     public void disconnect() {
+        lastScannedAddress = null;
+        if(divvyServerSocket!=null && divvyServerSocket.isConnected())
+            try {
+                divvyServerSocket.close();
+            } catch (IOException ex) {
+            }
+        divvyServerSocket = null;
+        divvyServer = null;
     }
 
     /**
      * Request Server for project Update
      */
     public void sync() {
+        if (divvyServer == null) {
+            log.severe("SYNC failed, proxy interface is null");
+            return;
+        }
+        
         List<Details> othersList = null;
         try {
             othersList = divvyServer.listDetails();
-        } catch (RemoteException ex) {
-        }
-        
-        if(othersList == null) {
+        } catch (Exception ex) {
             log.info("Failed to Fetch Others List");
-            return; 
+            disconnect();
+            return;
         }
-        log.info("Number of Project of Server["+lastScannedAddress.getHostAddress()+"] "+othersList.size());
-        List<Details> fetchThese = projectManager.processOtherClientList(othersList);
-        log.info("Number of New Project of Server["+lastScannedAddress.getHostAddress()+"] "+fetchThese.size());
         
-        for (Details projectDetails : fetchThese) {
-            
-            Project newProject = null;
-            try {
-                newProject = divvyServer.getProject(projectDetails.getpID().toString());
-            } catch (RemoteException ex) {
+        
+        log.info("Number of Project of Server["+lastScannedAddress.getHostAddress()+"] "+othersList.size());
+        
+        try {
+            List<Details> fetchThese = projectManager.processOtherClientList(othersList);
+            log.info("Number of New Project of Server["+lastScannedAddress.getHostAddress()+"] "+fetchThese.size());
+
+            for (Details projectDetails : fetchThese) {
+
+                Project newProject = null;
+                try {
+                    newProject = divvyServer.getProject(projectDetails.getpID().toString());
+                } catch (Exception ex) {
+                    log.severe("Server["+lastScannedAddress.getHostAddress()+"] Project Failed to Fetch :"+projectDetails.getpID() );
+                    continue;
+                }
+                if (!projectManager.canAddThisProject(newProject)) {
+                    log.severe("Server["+lastScannedAddress.getHostAddress()+"] Project, Can't Add this Project :"+projectDetails.getpID() );
+                    continue;
+                }
+                if (!newProject.completeValidation()) {
+                    log.severe("Server["+lastScannedAddress.getHostAddress()+"] Project Validation Failed :"+projectDetails.getpID() );
+                    continue;
+                }
+                if (!newProject.save()) {
+                    log.severe("Server["+lastScannedAddress.getHostAddress()+"] Project Failed to Save : "+newProject.getDetails().getFileName());
+                    continue;
+                }
+                if (!newProject.exportProject()) {
+                    log.severe("Server["+lastScannedAddress.getHostAddress()+"] Project Failed to Export : "+newProject.getDetails().getFileName());
+                    continue;
+                }
             }
-            if(newProject == null)
-            {
-                log.severe("Server["+lastScannedAddress.getHostAddress()+"] Project Failed to Fetch :"+projectDetails.getpID() );
-                continue;
-            }
-            if (!projectManager.canAddThisProject(newProject)) {
-                log.severe("Server["+lastScannedAddress.getHostAddress()+"] Project, Can't Add this Project :"+projectDetails.getpID() );
-                continue;
-            }
-            if (!newProject.completeValidation()) {
-                log.severe("Server["+lastScannedAddress.getHostAddress()+"] Project Validation Failed :"+projectDetails.getpID() );
-                continue;
-            }
-            if (!newProject.save()) {
-                log.severe("Server["+lastScannedAddress.getHostAddress()+"] Project Failed to Save : "+newProject.getDetails().getFileName());
-                continue;
-            }
-            if (!newProject.exportProject()) {
-                log.severe("Server["+lastScannedAddress.getHostAddress()+"] Project Failed to Export : "+newProject.getDetails().getFileName());
-                continue;
-            }
-            
+        } catch (Exception ex) {
+            log.info("Failed to Fetch Others List");
+            disconnect();
+            return;
         }
+        
     }
     
     /**
@@ -325,7 +341,7 @@ public class DivvyClient implements ClientInterface{
      * @return isRunning
      */
     private boolean checkForServer(InetAddress address) {
-        boolean printStatus = false;
+        boolean printStatus = true;
         if(printStatus)
             System.out.print("Checking "+address+" ");
         
@@ -355,6 +371,7 @@ public class DivvyClient implements ClientInterface{
                 if (working && addWorkingServer(address)) {
                     if(printStatus)
                         System.out.println("Working");
+                    socket.close();
                     return true;
                 }
             }
@@ -369,23 +386,19 @@ public class DivvyClient implements ClientInterface{
     }
     
     
-    private InetAddress firstScannedServer;
     /**
-     * Maintain List if Server is Already Scanned, it skips it
+     * Maintain Set of all discovered Server
      * @param address
      * @return isNotSkipped
      */
     private boolean addWorkingServer(InetAddress address) {
         log.info("Server "+address+" Found");
-        if (firstScannedServer == null)
-            firstScannedServer = address;
         
-        if(!serverDone.contains(address)) {
-            lastScannedAddress = address;
-            isLastFreshServer = true;
-            serverDone.add(address);
-            return true;
+        lastScannedAddress = address;
+        if(!serverFound.contains(address)) {
+            serverFound.add(address);
         }
-        return false;
+        return true;
     }
+
 }

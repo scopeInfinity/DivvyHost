@@ -30,6 +30,8 @@ public class Configuration {
     public static int CLIENT_CONNECT_TIMEOUT = 5000;
     
     public static long SCHEDULER_REFRESH_TIMER  = 15*60*1000;
+    public static long SERVER_REFRESH_TIMER  = 10*1000;
+    public static long CUSTOM_RPC_TIMEOUT  = 10*1000;
     
     public static boolean AUTO_EXPORTPROJECT_ONLOAD = false;
     

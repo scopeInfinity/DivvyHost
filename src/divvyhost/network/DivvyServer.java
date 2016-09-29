@@ -3,16 +3,25 @@ package divvyhost.network;
 import divvyhost.configuration.Configuration;
 import static divvyhost.configuration.Configuration.FAST_SCAN_MESSAGE;
 import static divvyhost.configuration.Configuration.fastScanServerEnabled;
+import static divvyhost.network.MessageCall.SHOW_ALL_MESSAGE_LOG;
 import divvyhost.project.Details;
 import divvyhost.project.Project;
 import divvyhost.project.ProjectManager;
+import divvyhost.utils.Paths;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.rmi.Naming;
+import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.List;
 import java.util.UUID;
@@ -31,7 +40,9 @@ public class DivvyServer {
     
     private static ServerSocket fastSocket;
     private Thread fastThread;
+    private Thread serverThread;
     private boolean isFastThreadRunning;
+    private boolean isServerThreadRunning;
     
     private ProjectManager projectManager; 
     
@@ -45,17 +56,40 @@ public class DivvyServer {
     }
     
     public boolean start() {
-        try {
-            server = new ServerConnection();
-            Naming.rebind("rmi://127.0.0.1/divvy", server);
-            rebindFastSocket();
-            if(fastScanServerEnabled)
-                fastSockerReply();
-            return true;
-        } catch (IOException ex) {
-            log.severe(ex.toString());
-        }
-        return false;
+        checkAndRunServerSocket();
+        rebindFastSocket();
+        if(fastScanServerEnabled)
+            fastSockerReply();
+        return true;
+    }
+    
+    /**
+     * Check if server not running
+     */
+    private void checkAndRunServerSocket() {
+        serverThread = new Thread("ServerSocket Thread"){
+            
+            @Override            
+            public void run() {
+                isServerThreadRunning = true;
+                while(isServerThreadRunning) {
+                    try {
+                        if(server==null || !server.isRunning())
+                            server = new ServerConnection();
+                        sleep(Configuration.SERVER_REFRESH_TIMER);
+                    } catch (Exception e) {
+                        log.severe("Server Socker Failed!\n\n");
+                        e.printStackTrace();
+                    }
+                }
+            }
+                        
+            
+        };
+        serverThread.setPriority(Thread.MIN_PRIORITY);
+        serverThread.start();
+        
+        
     }
     
     private void rebindFastSocket() {
@@ -114,7 +148,9 @@ public class DivvyServer {
         log.severe("Calling @Deprecated, forceStop");
                 
         isFastThreadRunning = false;
-        if(server!=null) {
+        isServerThreadRunning = false;
+        if(serverThread!=null) {
+            serverThread.stop();
             server = null;
             log.info(">>>>> Foce Stopping");
         }
@@ -122,14 +158,85 @@ public class DivvyServer {
             fastThread.stop();
     }
     
-    private class ServerConnection extends UnicastRemoteObject implements ServerInterface {
+    private class ServerConnection implements ServerInterface {
+        private Socket clienthandle;
+        private ObjectInputStream is;
+        private ObjectOutputStream os;
         
-        ServerConnection() throws RemoteException {
+        ServerConnection() throws Exception {
+            dotask();
+        }
+        
+        private void close() {
+            if(clienthandle != null && clienthandle.isConnected())
+                try {
+                    clienthandle.close();
+            } catch (IOException ex) {
+            }
+            clienthandle = null;
+            is=null;
+            os=null;
+            log.info("Closing Connection");
+        }
+        
+        private void dotask() throws Exception {
+            while(true) {
+                ServerSocket socket = new ServerSocket(Configuration.PORT_RPC);
+                clienthandle = socket.accept();
+                is = new ObjectInputStream(clienthandle.getInputStream());
+                os = new ObjectOutputStream(clienthandle.getOutputStream());
+                
+                while(true) {
+                    if(!clienthandle.isConnected())
+                        break;
+                    Message message = Message.receive(is);
+                    if(SHOW_ALL_MESSAGE_LOG)
+                        log.info("Server Received a Message");
+                    if(!reply(message,os))
+                    {
+                        socket.close();
+                        break;
+                    }
+                }
+            }
             
+        }
+        
+        /**
+         * Reply for a given Message
+         * @param message
+         * @param os 
+         * @return hasReply and notTerminated
+         */
+        private boolean reply(Message message, ObjectOutputStream os) {
+            Message replyblock;
+            if (message == null) {
+                close();
+                return false;
+            } else if(message.getType() == Message.TYPE.isDivvyServer) {
+                replyblock = new Message(Boolean.valueOf(isDivvyServer()));
+            } else if(message.getType() == Message.TYPE.getUser) {
+                replyblock = new Message(getUser());
+            } else {
+                close();
+                return false;
+            }
+            if(!replyblock.send(os)) {
+                log.severe("Message not send! Closing Connection");
+                close();
+                return false;
+            }
+            return true;
+        }
+        
+        private boolean isRunning() {
+            if(clienthandle==null || !clienthandle.isConnected())
+                return false;
+            return true;
         }
 
         @Override
-        public List<Details> listDetails() throws RemoteException {
+        public List<Details> listDetails() {
             log.info("Client Requesting List of Projects");
             if(projectManager == null) {
                 log.severe("Project Manager NULL");
@@ -139,7 +246,7 @@ public class DivvyServer {
         }
 
         @Override
-        public Project getProject(String uuid) throws RemoteException  {
+        public Project getProject(String uuid)  {
             log.info("Client Requesting Project "+uuid);
             if(projectManager == null) {
                 log.severe("Project Manager NULL");
@@ -149,16 +256,20 @@ public class DivvyServer {
         }
 
         @Override
-        public boolean isDivvyServer()  throws RemoteException {
+        public boolean isDivvyServer() {
             log.info("Client Tested isDivvyServer()");
             return true;
         }
 
         @Override
-        public String getUser() throws RemoteException  {
+        public String getUser()  {
             log.info("Client taken User");
             return user;
         }
+
+        
+
+        
 
     }
 }

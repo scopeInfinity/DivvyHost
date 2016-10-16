@@ -2,8 +2,6 @@ package divvyhost.network;
 
 import divvyhost.project.Details;
 import divvyhost.project.Project;
-import java.rmi.Remote;
-import java.rmi.RemoteException;
 import java.util.List;
 
 /**

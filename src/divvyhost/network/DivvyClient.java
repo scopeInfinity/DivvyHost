@@ -19,11 +19,6 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.rmi.Naming;
-import java.rmi.NotBoundException;
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
@@ -84,33 +79,6 @@ public class DivvyClient implements ClientInterface{
      */
     private boolean getRemoteObj(InetAddress address) {
         try {
-            //        try {
-////            if (System.getSecurityManager() != null) {
-////                System.setSecurityManager(null);
-////            }
-////            Registry registry = LocateRegistry.getRegistry(lastScannedAddress.getHostAddress().toString(), Configuration.PORT_RPC);
-////            
-////            divvyServer = (ServerInterface) registry.lookup("divvy");
-//
-////            System.getProperties().put("java.rmi.server.hostname", ");
-////            
-////            divvyServer = (ServerInterface) Naming.lookup(
-////                    String.format("rmi://%s:%s/",
-////                            lastScannedAddress.getHostAddress().toString(),
-////                            String.valueOf(Configuration.PORT_RPC)) 
-////                            + "divvy");
-//            log.info("Got Server Object : "+lastScannedAddress.getHostAddress());
-//            log.info("Test : "+divvyServer.isDivvyServer()+"\n\n\n");
-//            log.info(""+divvyServer.getUser()+"\n\n\n");
-//
-//            return true; 
-//        } catch (NotBoundException | RemoteException ex) {
-//            log.severe(ex.toString());
-//            ex.printStackTrace();
-////        } catch (MalformedURLException ex) {
-////            log.severe(ex.toString());
-//        }
-//      
             divvyServerSocket = new Socket(address, Configuration.PORT_RPC);
             divvyServer = new MessageCall(divvyServerSocket);
             return true;

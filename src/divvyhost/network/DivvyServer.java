@@ -14,15 +14,10 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.rmi.Naming;
-import java.rmi.RMISecurityManager;
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.UnicastRemoteObject;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -35,6 +30,9 @@ import java.util.logging.Logger;
 public class DivvyServer {
     private static final Logger log = Logger.getLogger(DivvyServer.class.getName());
 
+    //Used by ServerConnection
+    private static ServerSocket socket;
+    
     private ServerConnection server;
     private String user;
     
@@ -67,6 +65,9 @@ public class DivvyServer {
      * Check if server not running
      */
     private void checkAndRunServerSocket() {
+        if(serverThread!=null && serverThread.isAlive())
+            return;
+        
         serverThread = new Thread("ServerSocket Thread"){
             
             @Override            
@@ -74,8 +75,10 @@ public class DivvyServer {
                 isServerThreadRunning = true;
                 while(isServerThreadRunning) {
                     try {
-                        if(server==null || !server.isRunning())
+                        if(server==null || !server.socketBinded()){
                             server = new ServerConnection();
+                            server.dotask();
+                        }
                         sleep(Configuration.SERVER_REFRESH_TIMER);
                     } catch (Exception e) {
                         log.severe("Server Socker Failed!\n\n");
@@ -163,11 +166,20 @@ public class DivvyServer {
         private ObjectInputStream is;
         private ObjectOutputStream os;
         
-        ServerConnection() throws Exception {
-            dotask();
+        ServerConnection() {
         }
         
-        private void close() {
+        /**
+         * Check if Server can still accepts for Incoming Connection
+         * @return 
+         */
+        public boolean socketBinded() {
+            if(socket == null || socket.isClosed())
+                return false;
+            return true;
+        }
+        
+        private void disconnect() {
             if(clienthandle != null && clienthandle.isConnected())
                 try {
                     clienthandle.close();
@@ -180,8 +192,9 @@ public class DivvyServer {
         }
         
         private void dotask() throws Exception {
+            if(!(socket != null && !socket.isClosed()))
+                socket = new ServerSocket(Configuration.PORT_RPC);
             while(true) {
-                ServerSocket socket = new ServerSocket(Configuration.PORT_RPC);
                 clienthandle = socket.accept();
                 is = new ObjectInputStream(clienthandle.getInputStream());
                 os = new ObjectOutputStream(clienthandle.getOutputStream());
@@ -194,7 +207,7 @@ public class DivvyServer {
                         log.info("Server Received a Message");
                     if(!reply(message,os))
                     {
-                        socket.close();
+                        disconnect();
                         break;
                     }
                 }
@@ -211,25 +224,29 @@ public class DivvyServer {
         private boolean reply(Message message, ObjectOutputStream os) {
             Message replyblock;
             if (message == null) {
-                close();
+                disconnect();
                 return false;
             } else if(message.getType() == Message.TYPE.isDivvyServer) {
                 replyblock = new Message(Boolean.valueOf(isDivvyServer()));
             } else if(message.getType() == Message.TYPE.getUser) {
                 replyblock = new Message(getUser());
+            } else if(message.getType() == Message.TYPE.getProject) {
+                replyblock = new Message(getProject((String)message.getValue()));
+            } else if(message.getType() == Message.TYPE.listDetails) {
+                replyblock = new Message((Serializable)listDetails());
             } else {
-                close();
+                disconnect();
                 return false;
             }
             if(!replyblock.send(os)) {
-                log.severe("Message not send! Closing Connection");
-                close();
+                log.severe("Message not send! Disconnecting Connection");
+                disconnect();
                 return false;
             }
             return true;
         }
         
-        private boolean isRunning() {
+        private boolean isConnectToClient() {
             if(clienthandle==null || !clienthandle.isConnected())
                 return false;
             return true;
@@ -250,6 +267,10 @@ public class DivvyServer {
             log.info("Client Requesting Project "+uuid);
             if(projectManager == null) {
                 log.severe("Project Manager NULL");
+                return null;
+            }
+            if(uuid == null) {
+                log.severe("Client Send UUID null");
                 return null;
             }
             return projectManager.getProject(uuid);

@@ -8,7 +8,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.rmi.RemoteException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -72,13 +71,23 @@ public class MessageCall implements ServerInterface {
     }
 
     @Override
-    public List<Details> listDetails() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public List<Details> listDetails() throws MessageFailure {
+        Message r = process(new Message(Message.TYPE.listDetails));
+        if(r== null)
+            throw new MessageFailure("Message Received is NULL");
+        if(r.getType() == Message.TYPE.Object)
+            return (List<Details>) r.getValue();
+        throw new MessageFailure();
     }
 
     @Override
-    public Project getProject(String uuid) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public Project getProject(String uuid) throws MessageFailure {
+        Message r = process(new Message(Message.TYPE.getProject,uuid));
+        if(r== null)
+            throw new MessageFailure("Message Received is NULL");
+        if(r.getType() == Message.TYPE.Object)
+            return (Project) r.getValue();
+        throw new MessageFailure();
     }
 
     @Override

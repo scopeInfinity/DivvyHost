@@ -20,7 +20,7 @@ public class Message implements Serializable {
     private static final Logger log = Logger.getLogger(Message.class.getName());
     private static final long serialVersionUID = 6008151131922371591L;
     
-    public enum TYPE {Object,isDivvyServer,getUser};
+    public enum TYPE {Object,isDivvyServer,getUser,listDetails,getProject};
     
     private TYPE type = null;
     private Serializable value = null;
@@ -77,7 +77,7 @@ public class Message implements Serializable {
     public boolean send(ObjectOutputStream oos) {
         try {
             oos.writeObject(this);
-            log.info("A message Send");
+            log.info("A message Send "+toString());
             return true;
         } catch (Exception ex) {
             log.severe(ex.toString());
@@ -96,7 +96,7 @@ public class Message implements Serializable {
             Message message = (Message) ois.readObject();
             if(message.isValid()) {
                 if(SHOW_ALL_MESSAGE_LOG)
-                    log.info("A message Received");
+                    log.info("A message Received "+message);
                 return message;
             }
         } catch (Exception ex) {
@@ -107,6 +107,12 @@ public class Message implements Serializable {
             
         return null;       
     }
+
+    @Override
+    public String toString() {
+        return "Message{"+type+","+value+"}";
+    }
+    
     
     
 }

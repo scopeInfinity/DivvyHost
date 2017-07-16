@@ -6,7 +6,7 @@ Decentralized Hosting : Fully P2P Hosting
 
 The Project aims for decentralized Hosting instead of a normal static IP or nameserver based Web Hosting.
 
-Any User can use DivvyHost to upload his HTML website and only he can modify it later on.
+Any user can use DivvyHost to upload his HTML website over a intranet and only he can modify it later on.
 
 Divvy Client Spreaded Over Intranet having a intranet IP, finds other DivvyClient shares website content which it contains with other, leading to spread of latest data all over intranet. Those HTML website uploaded from any user availabe to everyone even if few of client is down/off/terminated.
 

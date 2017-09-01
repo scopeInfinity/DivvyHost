@@ -198,6 +198,12 @@ public class ProjectManager {
         log.severe("Project Not Available : "+pID);
         return null;
     }
+    
+    public Project assignProject(Project project) {
+        availableProjects.put(project.getDetails().getpID(), project);
+        log.severe("Project Added to Repo "+project.getDetails().getpID());
+        return null;
+    }
 
     /**
      * Process other Server List

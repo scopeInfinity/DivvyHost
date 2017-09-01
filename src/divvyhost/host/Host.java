@@ -100,6 +100,7 @@ public class Host {
         String securityTagEnd = "";
         
         for (Project project : list) {
+            log.info("Indexing project "+project.getDetails().getFileName());
             sb.append("<project><name><a href=\"./")
                     .append(htmlFilter(project.getDetails().getFileName()))
                     .append("\">"+securityTagStart)
@@ -124,7 +125,7 @@ public class Host {
         } catch (IOException ex) {
             log.severe(ex.toString());
         }
-        log.info("Main Page Createaion Failed!");
+        log.info("Main Page Creation Failed!");
         
         return false;
     }

@@ -210,6 +210,7 @@ public class DivvyClient implements ClientInterface{
                     log.severe("Server["+lastScannedAddress.getHostAddress()+"] Project Failed to Save : "+newProject.getDetails().getFileName());
                     continue;
                 }
+                projectManager.assignProject(newProject);
                 if (!newProject.exportProject()) {
                     log.severe("Server["+lastScannedAddress.getHostAddress()+"] Project Failed to Export : "+newProject.getDetails().getFileName());
                     continue;

@@ -51,6 +51,11 @@ public class DivvyHost {
         service.setDivvyHost(this);
         log.info("Divvy Host Created!");
     }
+
+    public void createMainPage() {
+        projectManager.loadAllProjects();
+        hoster.createMainPage();
+    }
     
     public boolean start() {
         Configuration configuration = new Configuration();
@@ -78,7 +83,7 @@ public class DivvyHost {
         service = new Service();
         
         DivvyHost divvy = new DivvyHost();
-        if(!divvy.checkParameters(Arrays.asList(args)))
+        if(!divvy.checkParameters(divvy, Arrays.asList(args)))
             return;
         
         if(!divvy.start())
@@ -91,11 +96,15 @@ public class DivvyHost {
      * @param param 
      * @return needToContinue
      */
-    private boolean checkParameters(List<String> params){
+    private boolean checkParameters(DivvyHost divvy, List<String> params){
         String serviceFlag = null;
         for (String param : params) {
             if(param.startsWith("-service="))
                 serviceFlag = param.substring("-service=".length());
+        }
+        if (params.contains("-refresh-html")) {
+            divvy.createMainPage();
+            return  false;
         }
         if(!service.start(serviceFlag)) { 
             log.info("Quitting");

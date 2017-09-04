@@ -9,6 +9,7 @@ script:
     ~/Divvy/bin.sh -test 2>&1 |
     grep "Another Instance is Running" || { echo "Not Running"; exit 1; }
   - ~/Divvy/bin.sh stop
+  - sleep 10
   - |
     ~/Divvy/bin.sh -test 2>&1 | 
     grep "Another Instance is Running" || { echo "Still Running"; exit 1; }

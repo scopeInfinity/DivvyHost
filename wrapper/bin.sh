@@ -74,8 +74,7 @@ function _help {
 # Start DivvyHost
 function start {
 	pushd $BASEDIR;
-	nohup java -jar "$JAR_FILE" -nogui &> $LOG_FILE &
-	echo $! > $PID_FILE;
+	nohup java -jar "$JAR_FILE" -nogui &> $LOG_FILE & echo $! > $PID_FILE;
 	popd
 	echo "DivvyHost Started Called"	
 }
@@ -103,7 +102,7 @@ function install {
 	sed "s|^: ;BASEDIR.*|: ;BASEDIR\=$HOME/Divvy|g" < "$BASEDIR/bin.sh" > "$HOME/Divvy/bin.sh"
 	chmod +x "$HOME/Divvy/bin.sh"
 
-	cp -r "$BASEDIR/lib/" "$HOME/Divvy/"
+	cp -r "$BASEDIR/Conf" "$HOME/Divvy/" 2> /dev/null
 	cp "$BASEDIR/$JAR_FILE" "$HOME/Divvy/DivvyHost.jar"
 
 	createAutoStart;

@@ -119,15 +119,9 @@ goto installContinue
 	mkdir %INSTALLDIR% > NUL 2>&1
 	if %ERRORLEVEL%==0 echo Directory Created %INSTALLDIR%
 
-	mkdir %INSTALLDIR%\lib > NUL 2>&1
 	copy /Y %BASEDIR% %INSTALLDIR%
 	if not %ERRORLEVEL%==0 (
 		echo Unable to Copy from %BASEDIR% to %INSTALLDIR%
-		EXIT 1
-	)
-	copy /Y %BASEDIR%\lib %INSTALLDIR%\lib
-	if not %ERRORLEVEL%==0 (
-		echo Unable to Copy from %BASEDIR%\lib to %INSTALLDIR%\lib
 		EXIT 1
 	)
 	

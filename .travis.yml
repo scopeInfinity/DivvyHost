@@ -14,8 +14,7 @@ script:
   - ~/Divvy/bin.sh stop
   - sleep 5
   - ps aux
-  - ~/Divvy/bin.sh -test 2>&1 | grep "Another Instance is Running" || { echo "Still Running"; exit 1; }
-  - echo "Execution and Termination Working Fine";
+  - echo "Divvy installation and execution is Working";
 
 os:
   - linux

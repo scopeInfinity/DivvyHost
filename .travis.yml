@@ -8,8 +8,7 @@ script:
   - |
     ~/Divvy/bin.sh -test 2>&1 |
     grep "Another Instance is Running" || { echo "Not Running"; exit 1; }
-  - ~/Divvy/bin.sh stop
-  - sleep 10
+  - ps aux | grep "java -jar [Dd]ivvy[Hh]ost" | awk '{print $2}' | xargs kill
   - |
     ~/Divvy/bin.sh -test 2>&1 | 
     grep "Another Instance is Running" || { echo "Still Running"; exit 1; }
@@ -19,5 +18,4 @@ os:
   - linux
 jdk:
   - oraclejdk8
-  - openjdk8
-  - openjdk7
+  - oraclejdk7

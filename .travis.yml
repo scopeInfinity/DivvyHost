@@ -4,18 +4,20 @@ script:
   - bash ./dist/bin.sh install
   - cd ~
   - ~/Divvy/bin.sh start
-  - sleep 30
-  - |
-    ~/Divvy/bin.sh -test 2>&1 |
+  - sleep 10
+  - ~/Divvy/bin.sh -test 2>&1 |
     grep "Another Instance is Running" || { echo "Not Running"; exit 1; }
+  - ps aux
+  - ps aux | grep "java -jar [Dd]ivvy[Hh]ost"
   - ps aux | grep "java -jar [Dd]ivvy[Hh]ost" | awk '{print $2}' | xargs kill
-  - |
-    ~/Divvy/bin.sh -test 2>&1 | 
+  - sleep 10
+  - ~/Divvy/bin.sh -test 2>&1 | 
     grep "Another Instance is Running" || { echo "Still Running"; exit 1; }
-  - echo "Running and Stopping Working Fine";
+  - echo "Execution and Termination Working Fine";
 
 os:
   - linux
 jdk:
   - oraclejdk8
-  - oraclejdk7
+  - openjdk8
+  - openjdk7

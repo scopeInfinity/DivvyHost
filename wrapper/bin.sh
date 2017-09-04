@@ -74,8 +74,7 @@ function _help {
 # Start DivvyHost
 function start {
 	pushd $BASEDIR;
-	nohup java -jar "$JAR_FILE" -nogui &> $LOG_FILE &
-	echo $! > $PID_FILE;
+	nohup java -jar "$JAR_FILE" -nogui &> $LOG_FILE & echo $! > $PID_FILE;
 	popd
 	echo "DivvyHost Started Called"	
 }

@@ -92,6 +92,15 @@ divvy  -show
 - Web Hosting
    - Goto 'http://mydivvyserverip:9999' and see website hosted.
    - ![Web Hosting](./images/snap_web.png)
+   
+- Project List with keep on syncing with other divvyhost server within the network.
+- Configurations can be editable from `/path/to/divvy/Conf/conf.properties`
+```
+#Sample Divvy Host Configuration
+#Tue Mar 13 15:12:31 IST 2018
+MAX_SIZE_ON_DISK_MB=200
+INTERNAL_IP=172.16.156.0/24,127.0.0.1/31
+```
 
 
   

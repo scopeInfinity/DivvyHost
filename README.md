@@ -94,7 +94,7 @@ divvy  -show
    - ![Web Hosting](./images/snap_web.png)
    
 - Project List with keep on syncing with other divvyhost server within the network.
-- Configurations can be editable from `/path/to/divvy/Conf/conf.properties`
+- Configurations can be edited from `/path/to/divvy/Conf/conf.properties`
 ```
 #Sample Divvy Host Configuration
 #Tue Mar 13 15:12:31 IST 2018

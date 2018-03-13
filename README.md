@@ -66,6 +66,33 @@ Divvy Client Spreaded Over Intranet having a intranet IP, finds other DivvyClien
     cd /path/to/DivvyDistribution/
     bash bin.sh -run
 
+### Usage
+
+- DivvyHost is supposed to be started at boottime. To manually start the service use 
+```
+divvy start
+```
+
+- To make UI visible at any point time
+```
+divvy  -show
+```
+
+- Create new project
+   - ![Project Init](./images/snap_controller.png)
+
+- Project List
+   - ![Project List Page](./images/snap_project.png)
+
+- Update Project Content
+   - Goto `/path/to/divvy/Hosted/3b3b1fce-5118-46a3-a0a3-54f733242d51` (For ex. `~/Divvy/Hosted/3b3b1fce-5118-46a3-a0a3-54f733242d51`)
+   - Host HTML website in current directory
+   - From UI, select the project and `PULL` it.
+
+- Web Hosting
+   - Goto 'http://mydivvyserverip:9999' and see website hosted.
+   - ![Web Hosting](./images/snap_web.png)
+
 
   
     
